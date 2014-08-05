@@ -81,7 +81,7 @@ public class BaqendClient extends DB {
     public int scan(String table, String startkey, int recordcount, Set<String> fields, Vector<HashMap<String, ByteIterator>> result) {
 
         try {
-            String query = "{\"_id\":{\"$gte\":" + startkey + "}}";
+            String query = "{\"_id\":{\"$gte\":\"" + startkey +"\"}}";
             List<ObjectInfo> ids = client.executeQuery(bucket, query);
             HashMap<String, ByteIterator> values;
 
