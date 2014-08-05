@@ -1,0 +1,9 @@
+<component name="libraryTable">
+  <library name="hypertable-binding-0.1.41">
+    <CLASSES>
+      <root url="jar://$PROJECT_DIR$/hypertable/target/hypertable-binding-0.1.4.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES />
+  </library>
+</component>

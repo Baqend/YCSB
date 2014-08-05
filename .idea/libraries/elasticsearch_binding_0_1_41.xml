@@ -1,0 +1,9 @@
+<component name="libraryTable">
+  <library name="elasticsearch-binding-0.1.41">
+    <CLASSES>
+      <root url="jar://$PROJECT_DIR$/elasticsearch/target/archive-tmp/elasticsearch-binding-0.1.4.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES />
+  </library>
+</component>

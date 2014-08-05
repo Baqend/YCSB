@@ -1,0 +1,9 @@
+<component name="libraryTable">
+  <library name="cassandra-binding-0.1.41">
+    <CLASSES>
+      <root url="jar://$PROJECT_DIR$/cassandra/target/cassandra-binding-0.1.4.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES />
+  </library>
+</component>

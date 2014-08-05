@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="CompilerConfiguration">
+    <option name="DEFAULT_COMPILER" value="Javac" />
+    <resourceExtensions />
+    <wildcardResourcePatterns>
+      <entry name="!?*.java" />
+      <entry name="!?*.form" />
+      <entry name="!?*.class" />
+      <entry name="!?*.groovy" />
+      <entry name="!?*.scala" />
+      <entry name="!?*.flex" />
+      <entry name="!?*.kt" />
+      <entry name="!?*.clj" />
+    </wildcardResourcePatterns>
+    <annotationProcessing>
+      <profile default="true" name="Default" enabled="false">
+        <processorPath useClasspath="true" />
+      </profile>
+      <profile default="false" name="Maven default annotation processors profile" enabled="true">
+        <sourceOutputDir name="target/generated-sources/annotations" />
+        <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
+        <outputRelativeToContentRoot value="true" />
+        <processorPath useClasspath="true" />
+        <module name="accumulo-binding" />
+        <module name="baqend-binding" />
+        <module name="cassandra-binding" />
+        <module name="core" />
+        <module name="dynamodb-binding" />
+        <module name="elasticsearch-binding" />
+        <module name="hbase-binding" />
+        <module name="hypertable-binding" />
+        <module name="infinispan-binding" />
+        <module name="jdbc-binding" />
+        <module name="mapkeeper-binding" />
+        <module name="mongodb-binding" />
+        <module name="orientdb-binding" />
+        <module name="redis-binding" />
+        <module name="voldemort-binding" />
+      </profile>
+    </annotationProcessing>
+    <bytecodeTargetLevel>
+      <module name="accumulo-binding" target="1.6" />
+      <module name="baqend-binding" target="1.8" />
+      <module name="cassandra-binding" target="1.6" />
+      <module name="core" target="1.8" />
+      <module name="dynamodb-binding" target="1.6" />
+      <module name="elasticsearch-binding" target="1.6" />
+      <module name="hbase-binding" target="1.6" />
+      <module name="hypertable-binding" target="1.6" />
+      <module name="infinispan-binding" target="1.6" />
+      <module name="jdbc-binding" target="1.6" />
+      <module name="mapkeeper-binding" target="1.6" />
+      <module name="mongodb-binding" target="1.6" />
+      <module name="orientdb-binding" target="1.6" />
+      <module name="redis-binding" target="1.6" />
+      <module name="root" target="1.6" />
+      <module name="voldemort-binding" target="1.6" />
+      <module name="ycsb" target="1.6" />
+    </bytecodeTargetLevel>
+  </component>
+</project>
+
