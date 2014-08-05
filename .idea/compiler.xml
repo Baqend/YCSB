@@ -40,14 +40,14 @@
       </profile>
     </annotationProcessing>
     <bytecodeTargetLevel>
-      <module name="accumulo-binding" target="1.6" />
+      <module name="accumulo-binding" target="1.8" />
       <module name="baqend-binding" target="1.8" />
-      <module name="cassandra-binding" target="1.6" />
+      <module name="cassandra-binding" target="1.8" />
       <module name="core" target="1.8" />
-      <module name="dynamodb-binding" target="1.6" />
-      <module name="elasticsearch-binding" target="1.6" />
-      <module name="hbase-binding" target="1.6" />
-      <module name="hypertable-binding" target="1.6" />
+      <module name="dynamodb-binding" target="1.8" />
+      <module name="elasticsearch-binding" target="1.8" />
+      <module name="hbase-binding" target="1.8" />
+      <module name="hypertable-binding" target="1.8" />
       <module name="infinispan-binding" target="1.6" />
       <module name="jdbc-binding" target="1.6" />
       <module name="mapkeeper-binding" target="1.6" />

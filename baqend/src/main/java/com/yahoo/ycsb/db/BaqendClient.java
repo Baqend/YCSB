@@ -11,9 +11,9 @@ import info.orestes.pluggable.types.data.OObject;
 import info.orestes.predefined.OrestesClass;
 import info.orestes.rest.conversion.ClassFieldHolder;
 import info.orestes.rest.conversion.ClassHolder;
+
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutionException;
 import java.util.stream.Stream;
 
 /**
@@ -40,6 +40,7 @@ public class BaqendClient extends DB {
         } catch (Exception e) {
             System.err.println("Could not initialize Baqend client : "
                     + e.toString());
+            throw e;
         }
 
         table = props.getProperty("table", TABLENAME_PROPERTY_DEFAULT);
@@ -84,12 +85,13 @@ public class BaqendClient extends DB {
             String query = "{\"_id\":{\"$gte\":\"" + startkey +"\"}}";
             List<ObjectInfo> ids = client.executeQuery(bucket, query);
             HashMap<String, ByteIterator> values;
-
+            System.out.println(ids);
             Stream<CompletableFuture<OObject>> stream = client.loadAllInfos(ids.stream());
             values = new HashMap<>();
             stream.map(CompletableFuture::join);
 
             stream.forEach(obj -> {
+                System.out.println(obj);
                 if (fields != null) {
                     for (String s : fields) {
                         String v = null;
@@ -115,7 +117,7 @@ public class BaqendClient extends DB {
     @Override
     public int update(String table, String key, HashMap<String, ByteIterator> values) {
         OObject obj = schema.newInstance(new ObjectId(bucket, key), Version.ANY);
-        obj.setValue(schema.getField("values"), values);
+        obj.setValue(schema.getField("values"), convertMap(values));
         try {
             client.store(obj);
             return 0;
@@ -125,14 +127,23 @@ public class BaqendClient extends DB {
 
     }
 
+    private Map<String, String> convertMap(Map<String, ByteIterator> values) {
+        Map<String, String> newValues = new HashMap<>(values.size());
+        for(String k : values.keySet()) {
+            newValues.put(k, values.get(k).toString());
+        }
+        return newValues;
+    }
+
     @Override
     public int insert(String table, String key, HashMap<String, ByteIterator> values) {
         OObject obj = schema.newInstance(new ObjectId(bucket, key), Version.NEW);
-        obj.setValue(schema.getField("values"), values);
+        obj.setValue(schema.getField("values"), convertMap(values));
         try {
             client.store(obj);
             return 0;
         } catch (Exception e) {
+            e.printStackTrace();
             return 1;
         }
     }
