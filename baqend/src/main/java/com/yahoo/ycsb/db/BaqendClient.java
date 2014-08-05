@@ -26,7 +26,7 @@ public class BaqendClient extends DB {
     private String table;
     private Bucket bucket;
     private OrestesClass schema;
-    private OrestesClient client;
+    private OrestesClient<OObject> client;
 
     @Override
     public void init() throws DBException {
@@ -36,7 +36,7 @@ public class BaqendClient extends DB {
                 HOST_PROPERTY);
 
         try {
-            client = new OrestesObjectClient(url);
+            client = (OrestesClient) new OrestesObjectClient(url);
         } catch (Exception e) {
             System.err.println("Could not initialize Baqend client : "
                     + e.toString());
