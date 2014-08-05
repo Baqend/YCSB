@@ -12,6 +12,9 @@ import info.orestes.predefined.OrestesClass;
 import info.orestes.rest.conversion.ClassFieldHolder;
 import info.orestes.rest.conversion.ClassHolder;
 import java.util.*;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
+import java.util.stream.Stream;
 
 /**
  * Created by Michael on 04.08.2014.
@@ -76,23 +79,33 @@ public class BaqendClient extends DB {
 
     @Override
     public int scan(String table, String startkey, int recordcount, Set<String> fields, Vector<HashMap<String, ByteIterator>> result) {
+
         try {
             String query = "{\"_id\":{\"$gte\":" + startkey + "}}";
             List<ObjectInfo> ids = client.executeQuery(bucket, query);
             HashMap<String, ByteIterator> values;
 
-            for (ObjectInfo info : ids) {
-                OObject obj = client.load(info);
-                values = new HashMap<>();
+            Stream<CompletableFuture<OObject>> stream = client.loadAllInfos(ids.stream());
+            values = new HashMap<>();
+            stream.map(CompletableFuture::join);
 
+            stream.forEach(obj -> {
                 if (fields != null) {
                     for (String s : fields) {
-                        String v = obj.getValue(s).toString();
+                        String v = null;
+
+                        try {
+                            v = obj.get().getValue(s).toString();
+                        } catch (Exception e) {
+                            e.printStackTrace();
+                        }
+
                         values.put(s, new StringByteIterator(v));
                     }
                 }
                 result.add(values);
-            }
+            });
+
             return 0;
         } catch (Exception e) {
             return 1;
