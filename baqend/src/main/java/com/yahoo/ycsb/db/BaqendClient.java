@@ -31,6 +31,7 @@ public class BaqendClient extends DB {
         Properties props = getProperties();
         String url = props.getProperty("server.url",
                 HOST_PROPERTY);
+
         try {
             client = new OrestesObjectClient(url);
         }
@@ -41,10 +42,10 @@ public class BaqendClient extends DB {
         }
 
         table = props.getProperty("table", TABLENAME_PROPERTY_DEFAULT);
+        System.out.println("table property = " + table);
         bucket = new Bucket(table);
         ClassHolder classHolder = new ClassHolder(bucket, BucketAcl.createDefault());
-        ClassFieldHolder values = new ClassFieldHolder("values", Bucket.MAP);
-
+        ClassFieldHolder values = new ClassFieldHolder("values", Bucket.MAP, Bucket.STRING, Bucket.STRING);
         classHolder.init(values);
 
         schema = client.getSchema().add(classHolder);
@@ -80,6 +81,23 @@ public class BaqendClient extends DB {
     @Override
     public int scan(String table, String startkey, int recordcount, Set<String> fields, Vector<HashMap<String, ByteIterator>> result) {
        try {
+           String query = "{\"_id\":{\"$gte\":" + startkey + "}}\"";
+           List<ObjectInfo> ids = client.executeQuery(bucket, query);
+           HashMap<String, ByteIterator> values;
+
+           for (ObjectInfo info : ids) {
+               OObject obj = client.load(info);
+               values = new HashMap<String, ByteIterator>();
+
+               if (fields != null) {
+                   for( String s : fields) {
+                       String v = obj.getValue(s).toString();
+                       values.put(s, new StringByteIterator(v));
+                   };
+               }
+
+               result.add(values);
+           }
            return 0;
        }
        catch (Exception e) {
