@@ -67,7 +67,6 @@ public class BaqendClient extends DB {
                     String v = obj.getValue(s).toString();
                     result.put(s, new StringByteIterator(v));
                 }
-                ;
             }
             return 0;
         } catch (Exception e) {
