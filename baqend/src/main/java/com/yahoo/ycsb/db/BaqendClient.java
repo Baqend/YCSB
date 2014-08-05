@@ -80,24 +80,25 @@ public class BaqendClient extends DB {
 
     @Override
     public int scan(String table, String startkey, int recordcount, Set<String> fields, Vector<HashMap<String, ByteIterator>> result) {
-
         try {
             String query = "{\"_id\":{\"$gte\":\"" + startkey +"\"}}";
             List<ObjectInfo> ids = client.executeQuery(bucket, query);
-            HashMap<String, ByteIterator> values;
-            System.out.println(ids);
-            Stream<CompletableFuture<OObject>> stream = client.loadAllInfos(ids.stream());
-            values = new HashMap<>();
-            stream.map(CompletableFuture::join);
+            List<ObjectInfo> newIds = new LinkedList<>();
+            for (ObjectInfo id : ids) {
+                newIds.add(new ObjectInfo(id.getId(), Version.ANY));
+            }
 
-            stream.forEach(obj -> {
-                System.out.println(obj);
+            HashMap<String, ByteIterator> values;
+            Stream<CompletableFuture<OObject>> stream = client.loadAllInfos(newIds.stream());
+            values = new HashMap<>();
+
+            stream.map(CompletableFuture::join).forEach(obj -> {
                 if (fields != null) {
                     for (String s : fields) {
                         String v = null;
 
                         try {
-                            v = obj.get().getValue(s).toString();
+                            v = obj.getValue(s).toString();
                         } catch (Exception e) {
                             e.printStackTrace();
                         }
@@ -110,6 +111,7 @@ public class BaqendClient extends DB {
 
             return 0;
         } catch (Exception e) {
+            e.printStackTrace();
             return 1;
         }
     }
@@ -125,14 +127,6 @@ public class BaqendClient extends DB {
             return 1;
         }
 
-    }
-
-    private Map<String, String> convertMap(Map<String, ByteIterator> values) {
-        Map<String, String> newValues = new HashMap<>(values.size());
-        for(String k : values.keySet()) {
-            newValues.put(k, values.get(k).toString());
-        }
-        return newValues;
     }
 
     @Override
@@ -156,5 +150,13 @@ public class BaqendClient extends DB {
         } catch (Exception e) {
             return 1;
         }
+    }
+
+    private Map<String, String> convertMap(Map<String, ByteIterator> values) {
+        Map<String, String> newValues = new HashMap<>(values.size());
+        for(String k : values.keySet()) {
+            newValues.put(k, values.get(k).toString());
+        }
+        return newValues;
     }
 }
