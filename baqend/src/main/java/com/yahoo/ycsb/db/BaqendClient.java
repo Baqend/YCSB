@@ -84,16 +84,14 @@ public class BaqendClient extends DB {
 
             for (ObjectInfo info : ids) {
                 OObject obj = client.load(info);
-                values = new HashMap<String, ByteIterator>();
+                values = new HashMap<>();
 
                 if (fields != null) {
                     for (String s : fields) {
                         String v = obj.getValue(s).toString();
                         values.put(s, new StringByteIterator(v));
                     }
-                    ;
                 }
-
                 result.add(values);
             }
             return 0;
