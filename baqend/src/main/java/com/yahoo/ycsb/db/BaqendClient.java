@@ -20,8 +20,8 @@ public class BaqendClient extends DB {
 
     public static final String HOST_PROPERTY = "http://localhost:8080/";
     public static final String TABLENAME_PROPERTY_DEFAULT = "usertable";
-    public String table;
-    public Bucket bucket;
+    private String table;
+    private Bucket bucket;
     private OrestesClass schema;
     private OrestesClient client;
 
@@ -42,7 +42,6 @@ public class BaqendClient extends DB {
         }
 
         table = props.getProperty("table", TABLENAME_PROPERTY_DEFAULT);
-        System.out.println("table property = " + table);
         bucket = new Bucket(table);
         ClassHolder classHolder = new ClassHolder(bucket, BucketAcl.createDefault());
         ClassFieldHolder values = new ClassFieldHolder("values", Bucket.MAP, Bucket.STRING, Bucket.STRING);
