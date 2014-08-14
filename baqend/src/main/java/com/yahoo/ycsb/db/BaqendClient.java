@@ -21,35 +21,40 @@ import java.util.stream.Stream;
  */
 public class BaqendClient extends DB {
 
-    public static final String HOST_PROPERTY = "http://localhost:8080/";
+    public static final String HOST_PROPERTY = "http://test.baqend.com:80/";
     public static final String TABLENAME_PROPERTY_DEFAULT = "usertable";
-    private String table;
-    private Bucket bucket;
-    private OrestesClass schema;
-    private OrestesClient<OObject> client;
+    private volatile static String table;
+    private volatile static Bucket bucket;
+    private static volatile OrestesClass schema;
+    private static volatile OrestesClient<OObject> client;
 
     @Override
     public void init() throws DBException {
+        synchronized (BaqendClient.class) {
+            if (client == null) {
 
-        Properties props = getProperties();
-        String url = props.getProperty("server.url",
-                HOST_PROPERTY);
+                    Properties props = getProperties();
+                    String url = props.getProperty("server.url",
+                            HOST_PROPERTY);
 
-        try {
-            client = (OrestesClient) new OrestesObjectClient(url);
-        } catch (Exception e) {
-            System.err.println("Could not initialize Baqend client : "
-                    + e.toString());
-            throw e;
+                    try {
+                        client = (OrestesClient) new OrestesObjectClient(url);
+                    } catch (Exception e) {
+                        System.err.println("Could not initialize Baqend client : "
+                                + e.toString());
+                        throw e;
+                    }
+
+                    table = props.getProperty("table", TABLENAME_PROPERTY_DEFAULT);
+                    bucket = new Bucket(table);
+                    ClassHolder classHolder = new ClassHolder(bucket, BucketAcl.createDefault());
+                    ClassFieldHolder values = new ClassFieldHolder("values", Bucket.MAP, Bucket.STRING, Bucket.STRING);
+                    ClassFieldHolder timestamp = new ClassFieldHolder("time", Bucket.INTEGER);
+                    classHolder.init(values, timestamp);
+
+                    schema = client.getSchema().add(classHolder);
+                }
         }
-
-        table = props.getProperty("table", TABLENAME_PROPERTY_DEFAULT);
-        bucket = new Bucket(table);
-        ClassHolder classHolder = new ClassHolder(bucket, BucketAcl.createDefault());
-        ClassFieldHolder values = new ClassFieldHolder("values", Bucket.MAP, Bucket.STRING, Bucket.STRING);
-        classHolder.init(values);
-
-        schema = client.getSchema().add(classHolder);
     }
 
     /**
@@ -58,22 +63,31 @@ public class BaqendClient extends DB {
      */
     @Override
     public void cleanup() throws DBException {
-        client.getClient().destroy();
+        synchronized (BaqendClient.class) {
+            if (client != null) {
+                client.getClient().destroy();
+                System.out.println(Thread.currentThread() + "stale reads = " + StalenessDetector.countStaleReads());
+            }
+        }
     }
 
     @Override
     public int read(String table, String key, Set<String> fields, HashMap<String, ByteIterator> result) {
-        OObject obj = client.load(new ObjectId(bucket, key));
-
         try {
+            long t = StalenessDetector.generateVersion();
+            OObject obj = client.load(new ObjectId(bucket, key));
+            StalenessDetector.testForStaleness(key, (long) obj.getValue("time"), t);
+
             if (fields != null) {
                 for (String s : fields) {
-                    String v = obj.getValue(s).toString();
+                    String v = ((Map<String, String>) obj.getValue("values")).get(s);
                     result.put(s, new StringByteIterator(v));
                 }
             }
+
             return 0;
         } catch (Exception e) {
+            e.printStackTrace();
             return 1;
         }
     }
@@ -81,7 +95,7 @@ public class BaqendClient extends DB {
     @Override
     public int scan(String table, String startkey, int recordcount, Set<String> fields, Vector<HashMap<String, ByteIterator>> result) {
         try {
-            String query = "{\"_id\":{\"$gte\":\"" + startkey +"\"}}";
+            String query = "{\"_id\":{\"$gte\":\"" + startkey + "\"}}";
             List<ObjectInfo> ids = client.executeQuery(bucket, query, 0, recordcount);
             List<ObjectInfo> newIds = new LinkedList<>();
             for (ObjectInfo id : ids) {
@@ -98,7 +112,7 @@ public class BaqendClient extends DB {
                         String v = null;
 
                         try {
-                            v = obj.getValue(s).toString();
+                            v = ((Map<String, String>) obj.getValue("values")).get(s);
                         } catch (Exception e) {
                             e.printStackTrace();
                         }
@@ -118,10 +132,17 @@ public class BaqendClient extends DB {
 
     @Override
     public int update(String table, String key, HashMap<String, ByteIterator> values) {
-        OObject obj = schema.newInstance(new ObjectId(bucket, key), Version.ANY);
-        obj.setValue(schema.getField("values"), convertMap(values));
         try {
+            OObject obj = schema.newInstance(new ObjectId(bucket, key), Version.ANY);
+            obj.setValue(schema.getField("values"), convertMap(values));
+
+            Long t = StalenessDetector.generateVersion();
+            obj.setValue(schema.getField("time"), t);
+
             client.store(obj);
+            StalenessDetector.addVersion(key, t);
+
+
             return 0;
         } catch (Exception e) {
             return 1;
@@ -131,10 +152,14 @@ public class BaqendClient extends DB {
 
     @Override
     public int insert(String table, String key, HashMap<String, ByteIterator> values) {
-        OObject obj = schema.newInstance(new ObjectId(bucket, key), Version.NEW);
-        obj.setValue(schema.getField("values"), convertMap(values));
         try {
+            OObject obj = schema.newInstance(new ObjectId(bucket, key), Version.NEW);
+            obj.setValue(schema.getField("values"), convertMap(values));
+            Long t = StalenessDetector.generateVersion();
+            obj.setValue(schema.getField("time"), t);
             client.store(obj);
+            StalenessDetector.addVersion(key, t);
+
             return 0;
         } catch (Exception e) {
             e.printStackTrace();
@@ -154,8 +179,8 @@ public class BaqendClient extends DB {
 
     private Map<String, String> convertMap(Map<String, ByteIterator> values) {
         Map<String, String> newValues = new HashMap<>(values.size());
-        for(String k : values.keySet()) {
-            newValues.put(k, values.get(k).toString());
+        for (String k : values.keySet()) {
+            newValues.put(k, Base64.getEncoder().encodeToString(values.get(k).toArray()));
         }
         return newValues;
     }
