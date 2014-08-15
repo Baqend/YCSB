@@ -5,17 +5,16 @@ import com.yahoo.ycsb.estimators.TTLEstimator;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
 
 /**
  * Created by Michael on 12.08.2014.
  */
 public class DBSimulator implements SimulationLayer {
 
-    private ConcurrentHashMap<String, DBObject> db = new ConcurrentHashMap<>();
-    private TTLEstimator estimator;
-    private CacheSimulator cache;
-    private ScheduledExecutorService executorService = Executors.newScheduledThreadPool(1);
+    private volatile  ConcurrentHashMap<String, DBObject> db = new ConcurrentHashMap<>();
+    private volatile TTLEstimator estimator;
+    private volatile CacheSimulator cache;
+    private volatile ScheduledExecutorService executorService = Executors.newScheduledThreadPool(1);
 
     public DBSimulator(TTLEstimator estimator) {
         this.estimator = estimator;
@@ -44,16 +43,17 @@ public class DBSimulator implements SimulationLayer {
     public void write(DBObject obj) {
         try {
             db.compute(obj.getKey(), (k, v) -> {
+
                 if (v == null) {
                     return obj;
                 } else {
                     return obj.getTimeStamp() > v.getTimeStamp() ? obj : v;
                 }
             });
-
-            executorService.schedule(
-                   () -> cache.purge(obj.getKey()), 0,
-                    TimeUnit.MILLISECONDS);
+            cache.purge(obj.getKey());
+          //  executorService.schedule(
+           //        () -> cache.purge(obj.getKey()), 0, // DistributionService.getPurgeSample(),
+          //          TimeUnit.MILLISECONDS);
 
             Thread.sleep(DistributionService.getDBWriteSample()
                     + DistributionService.getCacheToDBSample());

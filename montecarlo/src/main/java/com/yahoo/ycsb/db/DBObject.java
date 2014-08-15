@@ -30,10 +30,6 @@ public class DBObject {
         return key;
     }
 
-    public void setKey(String key) {
-        this.key = key;
-    }
-
     public long getExpiration() {
         return expiration;
     }

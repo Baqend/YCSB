@@ -9,7 +9,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 public class CacheSimulator implements SimulationLayer {
 
     private volatile SimulationLayer db;
-    private ConcurrentHashMap<String, DBObject> cache = new ConcurrentHashMap<>();
+    private volatile ConcurrentHashMap<String, DBObject> cache = new ConcurrentHashMap<>();
 
     private AtomicInteger hits = new AtomicInteger();
     private AtomicInteger misses = new AtomicInteger();

@@ -71,9 +71,11 @@ public class MonteCarloClient extends DB {
             Thread.sleep(DistributionService.getClientToCacheSample());
             cache.write(obj);
             StalenessDetector.addVersion(key, t);
+            StalenessDetector.addWriteAcknowledgement(key, StalenessDetector.generateVersion());
 
             return 0;
         } catch (Exception e) {
+            e.printStackTrace();
             return 1;
         }
 
@@ -86,6 +88,7 @@ public class MonteCarloClient extends DB {
             DBObject obj = new DBObject(key, t);
             Thread.sleep(DistributionService.getClientToCacheSample());
             cache.write(obj);
+            StalenessDetector.addWriteAcknowledgement(key, StalenessDetector.generateVersion());
             StalenessDetector.addVersion(key, t);
 
             return 0;
