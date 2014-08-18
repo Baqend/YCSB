@@ -4,7 +4,7 @@ import com.yahoo.ycsb.ByteIterator;
 import com.yahoo.ycsb.DB;
 import com.yahoo.ycsb.DBException;
 import com.yahoo.ycsb.estimators.StaticEstimator;
-import org.apache.commons.math3.distribution.ExponentialDistribution;
+import org.apache.commons.math3.distribution.NormalDistribution;
 
 import java.util.HashMap;
 import java.util.Set;
@@ -23,9 +23,9 @@ public class MonteCarloClient extends DB {
     public void init() throws DBException {
         synchronized (MonteCarloClient.class) {
             if (cache == null) {
-                DistributionService d = new DistributionService(new ExponentialDistribution(10),
-                        new ExponentialDistribution(10), new ExponentialDistribution(200),
-                        new ExponentialDistribution(10));
+                DistributionService d = new DistributionService(new NormalDistribution(10, 2),
+                        new NormalDistribution(10, 2), new NormalDistribution(80, 2),
+                        new NormalDistribution(10, 2));
                 cache = new CacheSimulator(new DBSimulator(new StaticEstimator()));
             }
         }

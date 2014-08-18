@@ -6,25 +6,23 @@ import java.util.concurrent.atomic.AtomicInteger;
 /**
  * Created by Michael on 12.08.2014.
  */
-public class CacheSimulator implements SimulationLayer {
+public class CacheSimulatorSimple implements SimulationLayer {
 
     private volatile SimulationLayer db;
     private volatile ConcurrentHashMap<String, DBObject> cache = new ConcurrentHashMap<>();
-    private volatile ConcurrentHashMap<String, Long> purgedVersions = new ConcurrentHashMap<>();
 
     private AtomicInteger hits = new AtomicInteger();
     private AtomicInteger misses = new AtomicInteger();
     private AtomicInteger purges = new AtomicInteger();
 
-    public CacheSimulator(SimulationLayer db) {
+    public CacheSimulatorSimple(SimulationLayer db) {
         this.db = db;
-        ((DBSimulator) db).registerCache(this);
-      }
+       // ((DBSimulator) db).registerCache(this);
+    }
 
     public DBObject read(String key) {
         DBObject obj = cache.compute(key, (k, v) -> {
-            if (v == null || v.getExpiration() < System.nanoTime()
-                    || (purgedVersions.get(key) != null && v.getTimeStamp() < purgedVersions.get(key))){
+            if (v == null || v.getExpiration() < System.nanoTime()){
                 return null;
             }
             else {
@@ -54,14 +52,8 @@ public class CacheSimulator implements SimulationLayer {
             DBObject obj = db.read(key);
 
             cache.compute(key, (k, v) -> {
-                if (purgedVersions.get(key) != null && purgedVersions.get(key) > obj.getTimeStamp()) {
-                    System.out.println("version from db = " + obj.getTimeStamp() + " purged version = " + purgedVersions.get(key));
-                    System.out.println("no insert because of old version");
-                    return null;
-                }
                 if (v != null) {
-                    System.out.println("no insert because of old version");
-                    return obj.getTimeStamp() > v.getTimeStamp() ? obj : v;
+                        return obj.getTimeStamp() > v.getTimeStamp() ? obj : v;
                 }
                 return obj;
             });
@@ -87,7 +79,7 @@ public class CacheSimulator implements SimulationLayer {
 
     public void purge(DBObject obj) {
         cache.remove(obj.getKey());
-        purgedVersions.put(obj.getKey(), obj.getTimeStamp());
+
         purges.incrementAndGet();
     }
 
