@@ -17,14 +17,14 @@ import java.util.concurrent.atomic.AtomicInteger;
 public class MonteCarloClient extends DB {
 
     private static volatile CacheSimulator cache;
-    private static AtomicInteger cntr = new AtomicInteger();
+    private static AtomicInteger threadCount = new AtomicInteger();
 
     @Override
     public void init() throws DBException {
         synchronized (MonteCarloClient.class) {
             if (cache == null) {
                 DistributionService d = new DistributionService(new ExponentialDistribution(10),
-                        new ExponentialDistribution(10), new ExponentialDistribution(50),
+                        new ExponentialDistribution(10), new ExponentialDistribution(200),
                         new ExponentialDistribution(10));
                 cache = new CacheSimulator(new DBSimulator(new StaticEstimator()));
             }
@@ -37,7 +37,7 @@ public class MonteCarloClient extends DB {
      */
     @Override
     public void cleanup() throws DBException {
-           if (cntr.incrementAndGet() == Long.parseLong(getProperties().getProperty("threadcount", "16"))) {
+           if (threadCount.incrementAndGet() == Long.parseLong(getProperties().getProperty("threadcount", "16"))) {
                System.out.println(Thread.currentThread() + "stale reads = " + StalenessDetector.countStaleReads());
                cache.printStatistics();
            }
@@ -88,8 +88,8 @@ public class MonteCarloClient extends DB {
             DBObject obj = new DBObject(key, t);
             Thread.sleep(DistributionService.getClientToCacheSample());
             cache.write(obj);
-            StalenessDetector.addWriteAcknowledgement(key, StalenessDetector.generateVersion());
             StalenessDetector.addVersion(key, t);
+            StalenessDetector.addWriteAcknowledgement(key, StalenessDetector.generateVersion());
 
             return 0;
         } catch (Exception e) {

@@ -8,6 +8,7 @@ public class DBObject {
     private volatile String key;
     private volatile long timeStamp;
     private volatile long expiration;
+    private volatile boolean purged = false;
 
     public long getTimeStamp() {
         return timeStamp;
@@ -36,5 +37,13 @@ public class DBObject {
 
     public void setExpiration(long expiration) {
         this.expiration = expiration;
+    }
+
+    public boolean isPurged() {
+        return purged;
+    }
+
+    public void setPurged(boolean purged) {
+        this.purged = purged;
     }
 }

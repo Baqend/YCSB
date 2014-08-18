@@ -10,6 +10,7 @@ public class CacheSimulator implements SimulationLayer {
 
     private volatile SimulationLayer db;
     private volatile ConcurrentHashMap<String, DBObject> cache = new ConcurrentHashMap<>();
+    private volatile ConcurrentHashMap<String, Long> purgedVersions = new ConcurrentHashMap<>();
 
     private AtomicInteger hits = new AtomicInteger();
     private AtomicInteger misses = new AtomicInteger();
@@ -21,8 +22,15 @@ public class CacheSimulator implements SimulationLayer {
       }
 
     public DBObject read(String key) {
-        DBObject obj = cache.compute(key, (k, v) -> v != null
-                && v.getExpiration() < System.nanoTime() ? v : null);
+        DBObject obj = cache.compute(key, (k, v) -> {
+            if (v == null || v.getExpiration() < System.nanoTime()
+                    || (purgedVersions.get(key) != null && v.getTimeStamp() <= purgedVersions.get(key))){
+                return null;
+            }
+            else {
+                return v;
+            }
+        });
 
         if (obj == null) {
             misses.incrementAndGet();
@@ -44,7 +52,18 @@ public class CacheSimulator implements SimulationLayer {
         try {
             Thread.sleep(DistributionService.getCacheToDBSample());
             DBObject obj = db.read(key);
-            cache.put(key, obj);
+
+            cache.compute(key, (k, v) -> {
+                if (v != null) {
+                    if (purgedVersions.get(key) != null && purgedVersions.get(key) >= obj.getTimeStamp()) {
+                        return null;
+                    }
+                    else {
+                        return obj.getTimeStamp() > v.getTimeStamp() ? obj : v;
+                    }
+                }
+                return obj;
+            });
             Thread.sleep(DistributionService.getClientToCacheSample());
 
             return obj;
@@ -65,8 +84,11 @@ public class CacheSimulator implements SimulationLayer {
         }
     }
 
-    public void purge(String key) {
-        cache.remove(key);
+    public void purge(DBObject obj) {
+        cache.compute(obj.getKey(), (k, v) -> {
+            purgedVersions.put(obj.getKey(), obj.getTimeStamp());
+            return null;});
+
         purges.incrementAndGet();
     }
 

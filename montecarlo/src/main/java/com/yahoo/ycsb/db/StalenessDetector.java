@@ -10,9 +10,10 @@ public class StalenessDetector {
     private static volatile ConcurrentHashMap<String, Long> writeVersions = new ConcurrentHashMap<>();
     private static volatile ConcurrentHashMap<String, Long> writeAcknowledgments = new ConcurrentHashMap<>();
     private static AtomicInteger staleReads = new AtomicInteger();
+    private static volatile AtomicInteger versionCounter = new AtomicInteger();
 
     public static long generateVersion() {
-        return System.nanoTime();
+        return versionCounter.incrementAndGet();
     }
 
     public static void addVersion(String key, long version) {
@@ -38,7 +39,6 @@ public class StalenessDetector {
     public static void testForStaleness(String key, long version, long readTimeStamp) {
         writeVersions.compute(key, (k, v) -> {
             Long writeAck = writeAcknowledgments.get(key);
-
             if (v != null && writeAck != null && (v > version)
                     && (writeAck < readTimeStamp)) {
                 System.out.println("stale read: version = " + version + ", v = " + v

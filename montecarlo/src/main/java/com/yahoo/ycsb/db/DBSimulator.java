@@ -5,6 +5,7 @@ import com.yahoo.ycsb.estimators.TTLEstimator;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Created by Michael on 12.08.2014.
@@ -34,7 +35,6 @@ public class DBSimulator implements SimulationLayer {
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
-
         return obj;
     }
 
@@ -43,17 +43,16 @@ public class DBSimulator implements SimulationLayer {
     public void write(DBObject obj) {
         try {
             db.compute(obj.getKey(), (k, v) -> {
-
                 if (v == null) {
                     return obj;
                 } else {
                     return obj.getTimeStamp() > v.getTimeStamp() ? obj : v;
                 }
             });
-            cache.purge(obj.getKey());
-          //  executorService.schedule(
-           //        () -> cache.purge(obj.getKey()), 0, // DistributionService.getPurgeSample(),
-          //          TimeUnit.MILLISECONDS);
+
+            executorService.schedule(
+                    () -> cache.purge(obj), DistributionService.getPurgeSample(),
+                    TimeUnit.MILLISECONDS);
 
             Thread.sleep(DistributionService.getDBWriteSample()
                     + DistributionService.getCacheToDBSample());
