@@ -1,14 +1,17 @@
 package com.yahoo.ycsb.db;
 
 /**
- * Created by Michael on 13.08.2014.
+ * Created by Michael Schaarschmidt
+ *
+ * This class implements a bean object for simulation purposes.
+ * It contains only fields that are necessary for the simulation, no
+ * actual values.
  */
 public class DBObject {
 
     private volatile String key;
     private volatile long timeStamp;
     private volatile long expiration;
-    private volatile boolean purged = false;
 
     public long getTimeStamp() {
         return timeStamp;
@@ -39,11 +42,5 @@ public class DBObject {
         this.expiration = expiration;
     }
 
-    public boolean isPurged() {
-        return purged;
-    }
 
-    public void setPurged(boolean purged) {
-        this.purged = purged;
-    }
 }

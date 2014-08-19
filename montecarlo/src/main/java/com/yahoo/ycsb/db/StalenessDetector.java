@@ -4,8 +4,13 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
- * Created by Michael on 07.08.2014.
- */
+ * Created by Michael Schaarschmidt.
+ *
+ * This class keeps track of stale reads. To this end,
+ * a client needs to register acknowledged write versions
+ * as well as the timestamps of the write acknowledgement.
+ *
+ *  */
 public class StalenessDetector {
     private static volatile ConcurrentHashMap<String, Long> writeVersions = new ConcurrentHashMap<>();
     private static volatile ConcurrentHashMap<String, Long> writeAcknowledgments = new ConcurrentHashMap<>();
@@ -36,6 +41,15 @@ public class StalenessDetector {
         });
     }
 
+    /**
+     * Tests for stale reads. By this definition, a
+     * read is stale if the acknowledged write version is newer than
+     * the version we are testing and if the read has begun after the
+     * write has been acknowledged.
+     * @param key
+     * @param version
+     * @param readTimeStamp
+     */
     public static void testForStaleness(String key, long version, long readTimeStamp) {
         writeVersions.compute(key, (k, v) -> {
             Long writeAck = writeAcknowledgments.get(key);

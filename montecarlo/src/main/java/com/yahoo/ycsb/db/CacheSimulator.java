@@ -4,9 +4,11 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
- * Created by Michael on 12.08.2014.
+ * Created by Michael Schaarschmidt
+ *
+ *
  */
-public class CacheSimulator implements SimulationLayer {
+public class CacheSimulator implements CacheLayer {
 
     private volatile SimulationLayer db;
     private volatile ConcurrentHashMap<String, DBObject> cache = new ConcurrentHashMap<>();
@@ -55,12 +57,9 @@ public class CacheSimulator implements SimulationLayer {
 
             cache.compute(key, (k, v) -> {
                 if (purgedVersions.get(key) != null && purgedVersions.get(key) > obj.getTimeStamp()) {
-                    System.out.println("version from db = " + obj.getTimeStamp() + " purged version = " + purgedVersions.get(key));
-                    System.out.println("no insert because of old version");
                     return null;
                 }
                 if (v != null) {
-                    System.out.println("no insert because of old version");
                     return obj.getTimeStamp() > v.getTimeStamp() ? obj : v;
                 }
                 return obj;

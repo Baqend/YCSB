@@ -12,11 +12,21 @@ import java.util.Vector;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
- * Created by Michael on 12.08.2014.
+ * Created by Michael Schaarschmidt.0
+ *
+ * Implements a YCSB binding for a concurrent Monte Carlo simulation of
+ * caching behaviour. To this end, multiple implementations of
+ * the SimulationLayer interface are stacked into each other.
+ * The ultimate goal of this implementation is to help understand how different caching
+ * parameters (most importantly expiration (TTL)) impact the cache-hit ratio and YCSB throughput.
+ *
+ * Latency roundtrips are simulated through arbitrary distributions. We can then plug different implementations
+ * of the TTLEstimator interface into the database simulator
+ *
  */
 public class MonteCarloClient extends DB {
 
-    private static volatile CacheSimulator cache;
+    private static volatile CacheLayer cache;
     private static AtomicInteger threadCount = new AtomicInteger();
 
     @Override
@@ -37,6 +47,8 @@ public class MonteCarloClient extends DB {
      */
     @Override
     public void cleanup() throws DBException {
+
+            // The last thread collects statistics.
            if (threadCount.incrementAndGet() == Long.parseLong(getProperties().getProperty("threadcount", "16"))) {
                System.out.println(Thread.currentThread() + "stale reads = " + StalenessDetector.countStaleReads());
                cache.printStatistics();
@@ -60,6 +72,7 @@ public class MonteCarloClient extends DB {
 
     @Override
     public int scan(String table, String startkey, int recordcount, Set<String> fields, Vector<HashMap<String, ByteIterator>> result) {
+        // Currently not relevant for simulation purposes.
         return 0;
     }
 
@@ -100,6 +113,7 @@ public class MonteCarloClient extends DB {
 
     @Override
     public int delete(String table, String key) {
+        // Currently not relevant for simulation purposes.
         return 0;
     }
 }

@@ -3,7 +3,10 @@ package com.yahoo.ycsb.db;
 import org.apache.commons.math3.distribution.RealDistribution;
 
 /**
- * Created by Michael on 12.08.2014.
+ * Created by Michael Schaarschmidt
+ *
+ * Contains all distributions necessary for the simulation and
+ * Provides samples for all distributions.
  */
 public class DistributionService {
 
