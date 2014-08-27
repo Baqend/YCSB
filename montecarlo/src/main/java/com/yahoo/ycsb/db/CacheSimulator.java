@@ -1,12 +1,13 @@
 package com.yahoo.ycsb.db;
 
+import java.io.BufferedWriter;
+import java.io.FileWriter;
+import java.io.IOException;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
- * Created by Michael Schaarschmidt
- *
- *
+ * Created by Michael Schaarschmidt.
  */
 public class CacheSimulator implements CacheLayer {
 
@@ -21,15 +22,14 @@ public class CacheSimulator implements CacheLayer {
     public CacheSimulator(SimulationLayer db) {
         this.db = db;
         ((DBSimulator) db).registerCache(this);
-      }
+    }
 
     public DBObject read(String key) {
         DBObject obj = cache.compute(key, (k, v) -> {
             if (v == null || v.getExpiration() < System.nanoTime()
-                    || (purgedVersions.get(key) != null && v.getTimeStamp() < purgedVersions.get(key))){
+                    || (purgedVersions.get(key) != null && v.getTimeStamp() < purgedVersions.get(key))) {
                 return null;
-            }
-            else {
+            } else {
                 return v;
             }
         });
@@ -37,8 +37,7 @@ public class CacheSimulator implements CacheLayer {
         if (obj == null) {
             misses.incrementAndGet();
             return readFromDB(key);
-        }
-        else {
+        } else {
             try {
                 Thread.sleep(DistributionService.getClientToCacheSample());
             } catch (InterruptedException e) {
@@ -90,13 +89,29 @@ public class CacheSimulator implements CacheLayer {
         purges.incrementAndGet();
     }
 
-    public void printStatistics() {
+    public void printStatistics(String fileName) {
+        if (fileName != null) {
+            try {
+                BufferedWriter writer = new BufferedWriter(new FileWriter(fileName, true));
+                writer.write("cache misses= " + misses.toString() + "\n");
+                writer.write("cache hits= " + hits.toString() + "\n");
+                writer.write("invalidations hits= " + purges.toString() + "\n");
+                writer.write("hit_ratio=" + hits.doubleValue() / (hits.doubleValue() + misses.doubleValue()) + "\n");
+                writer.flush();
+                writer.close();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+
         System.out.println("cache hits = " + hits.toString());
         System.out.println("cache misses = " + misses.toString());
         System.out.println("invalidations = " + purges.toString());
 
-        Double hitRatio = hits.doubleValue()/(hits.doubleValue() + misses.doubleValue());
+        Double hitRatio = hits.doubleValue() / (hits.doubleValue() + misses.doubleValue());
 
         System.out.println("cache hit ratio = " + hitRatio);
     }
+
+
 }

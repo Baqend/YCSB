@@ -1,8 +1,6 @@
 package com.yahoo.ycsb.db;
 
 /**
- * Created by Michael Schaarschmidt
- *
  * This class implements a bean object for simulation purposes.
  * It contains only fields that are necessary for the simulation, no
  * actual values.
@@ -41,6 +39,4 @@ public class DBObject {
     public void setExpiration(long expiration) {
         this.expiration = expiration;
     }
-
-
 }

@@ -8,6 +8,7 @@ public interface TTLEstimator {
     /**
      * Keeps track of incoming writes for
      * TTL estimation purposes.
+     *
      * @param key
      */
     public void registerWrite(String key);
@@ -16,6 +17,7 @@ public interface TTLEstimator {
      * Keeps track of incoming reads and
      * returns a TTL estimation for the
      * key.
+     *
      * @param key
      * @return
      */
@@ -23,6 +25,7 @@ public interface TTLEstimator {
 
     /**
      * returns an estimate for a key.
+     *
      * @return
      */
     public long estimate(String key);
