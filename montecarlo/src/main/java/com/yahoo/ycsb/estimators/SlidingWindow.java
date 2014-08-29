@@ -1,7 +1,5 @@
 package com.yahoo.ycsb.estimators;
 
-import com.yahoo.ycsb.db.DistributionService;
-
 import java.util.Iterator;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedDeque;
@@ -9,12 +7,9 @@ import java.util.concurrent.ConcurrentLinkedDeque;
 /**
  * Created by Michael on 19.08.2014.
  */
-public class PoissonEstimator implements TTLEstimator {
+public abstract class SlidingWindow implements ReadWriteCounter {
 
-    private final double base;
-    private final long maxTtl;
     private final double timeWindow;
-    private final int scaling = DistributionService.getScalingFactor();
 
     private volatile ConcurrentHashMap<String, Double> readFrequency = new ConcurrentHashMap<>();
     private volatile ConcurrentHashMap<String, ConcurrentLinkedDeque<Long>> readArrivals = new ConcurrentHashMap<>();
@@ -22,15 +17,11 @@ public class PoissonEstimator implements TTLEstimator {
     private volatile ConcurrentHashMap<String, Double> writeFrequency = new ConcurrentHashMap<>();
 
     /**
-     * @param base       Base for exponential calculation.
-     * @param maxTtl     Maximum of ttl in s.
      * @param timeWindow Estimation window in s.
      */
-    public PoissonEstimator(double base, long maxTtl, double timeWindow) {
-        this.base = base;
+    public SlidingWindow(double timeWindow) {
 
         // internal calculation requires nanoseconds
-        this.maxTtl = maxTtl * 1_000_000_000l;
         this.timeWindow = timeWindow * 1_000_000_000l;
     }
 
@@ -47,7 +38,7 @@ public class PoissonEstimator implements TTLEstimator {
     }
 
     @Override
-    public long registerRead(String key) {
+    public void registerRead(String key) {
         readArrivals.compute(key, (k, v) -> {
             if (v == null) {
                 v = new ConcurrentLinkedDeque<>();
@@ -57,10 +48,6 @@ public class PoissonEstimator implements TTLEstimator {
         });
 
         updateReadFrequency(key);
-        long ttl = estimate(key);
-        System.out.println("unscaled ttl for  = " + key + " is = " + ttl + "ns");
-
-        return ttl / scaling;
     }
 
     private void updateReadFrequency(String key) {
@@ -116,10 +103,13 @@ public class PoissonEstimator implements TTLEstimator {
     }
 
     @Override
-    public long estimate(String key) {
-        Double readF = readFrequency.get(key);
-        Double writeF = writeFrequency.get(key);
-
-        return 0;
+    public double getReadFrequency(String key) {
+        return readFrequency.get(key);
     }
+
+    @Override
+    public double getWriteFrequency(String key) {
+        return writeFrequency.get(key);
+    }
+
 }

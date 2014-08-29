@@ -24,7 +24,7 @@ public interface TTLEstimator {
     public long registerRead(String key);
 
     /**
-     * returns an estimate for a key.
+     * returns a nanosecond TTL estimate for a key.
      *
      * @return
      */

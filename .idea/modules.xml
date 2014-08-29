@@ -2,22 +2,11 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
-      <module fileurl="file://$PROJECT_DIR$/accumulo/accumulo-binding.iml" filepath="$PROJECT_DIR$/accumulo/accumulo-binding.iml" />
       <module fileurl="file://$PROJECT_DIR$/baqend/baqend-binding.iml" filepath="$PROJECT_DIR$/baqend/baqend-binding.iml" />
-      <module fileurl="file://$PROJECT_DIR$/cassandra/cassandra-binding.iml" filepath="$PROJECT_DIR$/cassandra/cassandra-binding.iml" />
       <module fileurl="file://$PROJECT_DIR$/core/core.iml" filepath="$PROJECT_DIR$/core/core.iml" />
-      <module fileurl="file://$PROJECT_DIR$/dynamodb/dynamodb-binding.iml" filepath="$PROJECT_DIR$/dynamodb/dynamodb-binding.iml" />
-      <module fileurl="file://$PROJECT_DIR$/elasticsearch/elasticsearch-binding.iml" filepath="$PROJECT_DIR$/elasticsearch/elasticsearch-binding.iml" />
-      <module fileurl="file://$PROJECT_DIR$/hbase/hbase-binding.iml" filepath="$PROJECT_DIR$/hbase/hbase-binding.iml" />
-      <module fileurl="file://$PROJECT_DIR$/hypertable/hypertable-binding.iml" filepath="$PROJECT_DIR$/hypertable/hypertable-binding.iml" />
-      <module fileurl="file://$PROJECT_DIR$/infinispan/infinispan-binding.iml" filepath="$PROJECT_DIR$/infinispan/infinispan-binding.iml" />
-      <module fileurl="file://$PROJECT_DIR$/jdbc/jdbc-binding.iml" filepath="$PROJECT_DIR$/jdbc/jdbc-binding.iml" />
-      <module fileurl="file://$PROJECT_DIR$/mapkeeper/mapkeeper-binding.iml" filepath="$PROJECT_DIR$/mapkeeper/mapkeeper-binding.iml" />
       <module fileurl="file://$PROJECT_DIR$/mongodb/mongodb-binding.iml" filepath="$PROJECT_DIR$/mongodb/mongodb-binding.iml" />
-      <module fileurl="file://$PROJECT_DIR$/orientdb/orientdb-binding.iml" filepath="$PROJECT_DIR$/orientdb/orientdb-binding.iml" />
-      <module fileurl="file://$PROJECT_DIR$/redis/redis-binding.iml" filepath="$PROJECT_DIR$/redis/redis-binding.iml" />
+      <module fileurl="file://$PROJECT_DIR$/montecarlo/montecarlo-binding.iml" filepath="$PROJECT_DIR$/montecarlo/montecarlo-binding.iml" />
       <module fileurl="file://$PROJECT_DIR$/root.iml" filepath="$PROJECT_DIR$/root.iml" />
-      <module fileurl="file://$PROJECT_DIR$/voldemort/voldemort-binding.iml" filepath="$PROJECT_DIR$/voldemort/voldemort-binding.iml" />
       <module fileurl="file://$PROJECT_DIR$/distribution/ycsb.iml" filepath="$PROJECT_DIR$/distribution/ycsb.iml" />
     </modules>
   </component>

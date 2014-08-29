@@ -21,6 +21,14 @@ public class DistributionService {
 
     private static int scalingFactor;
 
+    /**
+     * @param toScale the timespan to scale
+     * @return the scaled time
+     */
+    public static double scale(double toScale) {
+        return toScale / scalingFactor;
+    }
+
     public DistributionService(RealDistribution clientToCache,
                                RealDistribution cacheToDB,
                                RealDistribution purge,

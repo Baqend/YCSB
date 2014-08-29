@@ -3,7 +3,7 @@ package com.yahoo.ycsb.db;
 import com.yahoo.ycsb.ByteIterator;
 import com.yahoo.ycsb.DB;
 import com.yahoo.ycsb.DBException;
-import com.yahoo.ycsb.estimators.PoissonEstimator;
+import com.yahoo.ycsb.estimators.SlidingWindow;
 import org.apache.commons.math3.distribution.NormalDistribution;
 
 import java.util.HashMap;
@@ -46,7 +46,7 @@ public class MonteCarloClient extends DB {
                         new NormalDistribution(10, 2), scaling);
 
                 cache = new CacheSimulator(new DBSimulator(
-                        new PoissonEstimator(2.0, 100, 10)));
+                        new SlidingWindow(2.0, 100, 10)));
 
 //                cache = new CacheSimulator(new DBSimulator(
 //                        new StaticEstimator()));

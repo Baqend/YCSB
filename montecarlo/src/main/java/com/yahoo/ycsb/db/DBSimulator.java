@@ -40,7 +40,8 @@ public class DBSimulator implements SimulationLayer {
         }
 
         // Everytime an object is read, we need a new TTL estimation.
-        obj.setExpiration(System.nanoTime() + estimator.registerRead(key));
+        long ttl = (long) Math.round(DistributionService.scale(estimator.registerRead(key)));
+        obj.setExpiration(System.nanoTime() + ttl);
 
         try {
             Thread.sleep(DistributionService.getCacheToDBSample());
