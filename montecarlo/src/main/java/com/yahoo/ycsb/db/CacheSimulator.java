@@ -1,8 +1,7 @@
 package com.yahoo.ycsb.db;
 
-import java.io.BufferedWriter;
-import java.io.FileWriter;
-import java.io.IOException;
+import com.yahoo.ycsb.SimulationResult;
+
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -73,29 +72,28 @@ public class CacheSimulator implements CacheLayer {
     }
 
     public void write(DBObject obj) {
-        try {
-            Thread.sleep(DistributionService.getCacheToDBSample());
-            db.write(obj);
-            Thread.sleep(DistributionService.getClientToCacheSample());
-
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
+        db.write(obj);
     }
 
     public void purge(DBObject obj) {
-        cache.remove(obj.getKey());
+        cache.compute(obj.getKey(), (k,v) -> {
+                if (v != null &&  v.getExpiration() > System.nanoTime()) {
+                    purges.incrementAndGet();
+                }
+            return null;
+        });
         purgedVersions.put(obj.getKey(), obj.getTimeStamp());
-        purges.incrementAndGet();
     }
 
     public void printStatistics(String fileName) {
+/*
         if (fileName != null) {
             try {
                 BufferedWriter writer = new BufferedWriter(new FileWriter(fileName, true));
                 writer.write("cache misses= " + misses.toString() + "\n");
                 writer.write("cache hits= " + hits.toString() + "\n");
-                writer.write("invalidations hits= " + purges.toString() + "\n");
+                writer.write("invalidations = " + purges.toString() + "\n");
+
                 writer.write("hit_ratio=" + hits.doubleValue() / (hits.doubleValue() + misses.doubleValue()) + "\n");
                 writer.flush();
                 writer.close();
@@ -103,15 +101,18 @@ public class CacheSimulator implements CacheLayer {
                 e.printStackTrace();
             }
         }
-
+*/
         System.out.println("cache hits = " + hits.toString());
         System.out.println("cache misses = " + misses.toString());
         System.out.println("invalidations = " + purges.toString());
+        System.out.println("stale reads = " + StalenessDetector.countStaleReads());
 
         Double hitRatio = hits.doubleValue() / (hits.doubleValue() + misses.doubleValue());
-
         System.out.println("cache hit ratio = " + hitRatio);
+
     }
 
-
+    public SimulationResult calculateScore() {
+        return new SimulationResult(misses.longValue(), purges.longValue(), StalenessDetector.countStaleReads());
+    }
 }

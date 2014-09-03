@@ -22,13 +22,26 @@
         <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
         <outputRelativeToContentRoot value="true" />
         <processorPath useClasspath="true" />
+        <module name="accumulo-binding" />
         <module name="baqend-binding" />
+        <module name="cassandra-binding" />
         <module name="core" />
+        <module name="dynamodb-binding" />
+        <module name="elasticsearch-binding" />
+        <module name="hbase-binding" />
+        <module name="hypertable-binding" />
+        <module name="infinispan-binding" />
+        <module name="jdbc-binding" />
+        <module name="mapkeeper-binding" />
         <module name="mongodb-binding" />
+        <module name="montecarlo" />
         <module name="montecarlo-binding" />
+        <module name="orientdb-binding" />
+        <module name="redis-binding" />
+        <module name="voldemort-binding" />
       </profile>
     </annotationProcessing>
-    <bytecodeTargetLevel>
+    <bytecodeTargetLevel target="1.8">
       <module name="accumulo-binding" target="1.6" />
       <module name="baqend-binding" target="1.8" />
       <module name="cassandra-binding" target="1.6" />
@@ -41,6 +54,7 @@
       <module name="jdbc-binding" target="1.6" />
       <module name="mapkeeper-binding" target="1.6" />
       <module name="mongodb-binding" target="1.8" />
+      <module name="montecarlo" target="1.8" />
       <module name="montecarlo-binding" target="1.8" />
       <module name="orientdb-binding" target="1.6" />
       <module name="redis-binding" target="1.6" />

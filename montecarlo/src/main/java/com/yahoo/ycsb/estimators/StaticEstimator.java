@@ -8,6 +8,11 @@ import com.yahoo.ycsb.db.DistributionService;
 public class StaticEstimator implements TTLEstimator {
 
     private int scale = DistributionService.getScalingFactor();
+    private long ttl;
+
+    public StaticEstimator(long ttl) {
+        this.ttl = ttl * 1000_000_000l;
+    }
 
     public long registerRead(String key) {
         //register read somewhere
@@ -23,6 +28,6 @@ public class StaticEstimator implements TTLEstimator {
     @Override
     public long estimate(String key) {
         // static 10 seconds
-        return 10_000_000_000l / scale;
+        return ttl / scale;
     }
 }

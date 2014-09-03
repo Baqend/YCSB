@@ -1,10 +1,10 @@
 package com.yahoo.ycsb.db;
 
+import com.codahale.metrics.MetricRegistry;
 import com.yahoo.ycsb.ByteIterator;
 import com.yahoo.ycsb.DB;
 import com.yahoo.ycsb.DBException;
 import com.yahoo.ycsb.StringByteIterator;
-import info.orestes.client.OrestesClient;
 import info.orestes.client.OrestesObjectClient;
 import info.orestes.common.typesystem.*;
 import info.orestes.pluggable.types.data.OObject;
@@ -12,8 +12,12 @@ import info.orestes.predefined.OrestesClass;
 import info.orestes.rest.conversion.ClassFieldHolder;
 import info.orestes.rest.conversion.ClassHolder;
 
+import java.io.BufferedWriter;
+import java.io.FileWriter;
+import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Stream;
 
 /**
@@ -21,12 +25,15 @@ import java.util.stream.Stream;
  */
 public class BaqendClient extends DB {
 
-    public static final String HOST_PROPERTY = "http://test.baqend.com:80/";
+    public static final String HOST_PROPERTY = "http://benchmark.baqend.com:80/";
     public static final String TABLENAME_PROPERTY_DEFAULT = "usertable";
     private volatile static String table;
     private volatile static Bucket bucket;
+    private volatile static MetricRegistry metricRegistry;
+
     private static volatile OrestesClass schema;
-    private static volatile OrestesClient<OObject> client;
+    private static volatile OrestesObjectClient client;
+    private static AtomicInteger threadCount = new AtomicInteger();
 
     @Override
     public void init() throws DBException {
@@ -38,11 +45,18 @@ public class BaqendClient extends DB {
                             HOST_PROPERTY);
 
                     try {
-                        client = (OrestesClient) new OrestesObjectClient(url);
+                        client = new OrestesObjectClient(url);
+                        metricRegistry = client.getMetricRegistry();
+          /*              ConsoleReporter reporter = ConsoleReporter.forRegistry(metricRegistry)
+                                .convertRatesTo(TimeUnit.SECONDS)
+                                .convertDurationsTo(TimeUnit.MILLISECONDS)
+                                .build();
+                        reporter.start(10, TimeUnit.SECONDS);*/
+
                     } catch (Exception e) {
                         System.err.println("Could not initialize Baqend client : "
                                 + e.toString());
-                        throw e;
+                        e.printStackTrace();
                     }
 
                     table = props.getProperty("table", TABLENAME_PROPERTY_DEFAULT);
@@ -63,11 +77,23 @@ public class BaqendClient extends DB {
      */
     @Override
     public void cleanup() throws DBException {
-        synchronized (BaqendClient.class) {
-            if (client != null) {
-                client.getClient().destroy();
-                System.out.println(Thread.currentThread() + "stale reads = " + StalenessDetector.countStaleReads());
+        if (threadCount.incrementAndGet() == Long.parseLong(getProperties().getProperty("threadcount", "16"))) {
+            try {
+                Double hits = Double.valueOf(metricRegistry.counter("cache-hits").getCount());
+                Double misses = Double.valueOf(metricRegistry.counter("cache-misses").getCount());
+                BufferedWriter writer = new BufferedWriter(new FileWriter(("cache_c_i_workloada.txt"), true));
+                writer.write("{" + StalenessDetector.countStaleReads() + "," + hits + ","+ misses + "," + (hits / (hits + misses)) + "}");
+                writer.flush();
+                writer.close();
+
+                System.out.println("stale_reads = " + StalenessDetector.countStaleReads());
+                System.out.println("hit_ratio=" + (hits / (hits + misses)));
+            } catch (IOException e) {
+                e.printStackTrace();
             }
+
+
+            client.getClient().destroy();
         }
     }
 
@@ -141,6 +167,7 @@ public class BaqendClient extends DB {
 
             client.store(obj);
             StalenessDetector.addVersion(key, t);
+            StalenessDetector.addWriteAcknowledgement(key, StalenessDetector.generateVersion());
 
 
             return 0;
@@ -159,6 +186,7 @@ public class BaqendClient extends DB {
             obj.setValue(schema.getField("time"), t);
             client.store(obj);
             StalenessDetector.addVersion(key, t);
+            StalenessDetector.addWriteAcknowledgement(key, StalenessDetector.generateVersion());
 
             return 0;
         } catch (Exception e) {

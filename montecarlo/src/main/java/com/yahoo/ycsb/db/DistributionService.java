@@ -12,6 +12,7 @@ public class DistributionService {
 
     private static RealDistribution clientToCacheDistribution;
     private static RealDistribution cacheToDBDistribution;
+    private static RealDistribution clientToDBDistribution;
     private static RealDistribution purgeDistribution;
     private static RealDistribution dbWriteDistribution;
 
@@ -32,12 +33,15 @@ public class DistributionService {
     public DistributionService(RealDistribution clientToCache,
                                RealDistribution cacheToDB,
                                RealDistribution purge,
-                               RealDistribution dbWrite, int scaling) {
+                               RealDistribution dbWrite,
+                               RealDistribution clientToDB,
+                               int scaling) {
         clientToCacheDistribution = clientToCache;
         cacheToDBDistribution = cacheToDB;
         purgeDistribution = purge;
         dbWriteDistribution = dbWrite;
         scalingFactor = scaling;
+        clientToDBDistribution = clientToDB;
     }
 
     public static long getClientToCacheSample() {
@@ -54,5 +58,9 @@ public class DistributionService {
 
     public static long getDBWriteSample() {
         return new Double(dbWriteDistribution.sample()).longValue() / scalingFactor;
+    }
+
+    public static long getClientToDBSample() {
+        return new Double(clientToDBDistribution.sample()).longValue() / scalingFactor;
     }
 }

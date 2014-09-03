@@ -1,5 +1,7 @@
 package com.yahoo.ycsb.db;
 
+import com.yahoo.ycsb.SimulationResult;
+
 /**
  * Created by Michael Schaarschmidt
  */
@@ -19,6 +21,12 @@ public interface CacheLayer extends SimulationLayer {
      * cache hit ratio and invalidations.
      */
     public void printStatistics(String fileName);
+
+    /**
+     * Calculates cache score
+     *
+     */
+    public SimulationResult calculateScore();
 
 
 }

@@ -14,7 +14,7 @@ public class PoissonCalculator {
     }
 
     public static double writeQuantile(double w, double p) {
-        return -w * Math.log(1 - p);
+        return - Math.log(1 - p) / w;
     }
 
     public static double writeCDF(double w, double timespan) {

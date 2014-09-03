@@ -22,11 +22,12 @@
 #   Request distribution: zipfian
 
 recordcount=1000
-operationcount=1000
+operationcount=100000
 workload=com.yahoo.ycsb.workloads.CoreWorkload
-
+scaling=10
+exportfile=asdf.txt
 readallfields=true
-
+threadcount=10
 readproportion=0.95
 updateproportion=0.05
 scanproportion=0

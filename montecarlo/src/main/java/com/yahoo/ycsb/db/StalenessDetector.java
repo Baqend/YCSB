@@ -70,8 +70,8 @@ public class StalenessDetector {
 
             if (v != null && writeAck != null && (v > version)
                     && (writeAck < readTimeStamp)) {
-                System.out.println("stale read: version = " + version + ", v = " + v
-                        + ", readTimeStamp = " + readTimeStamp + ", writeAck = " + writeAck);
+//                System.out.println("stale read: version = " + version + ", v = " + v
+//                        + ", readTimeStamp = " + readTimeStamp + ", writeAck = " + writeAck);
 
                 staleReads.incrementAndGet();
                 return v;
@@ -88,5 +88,11 @@ public class StalenessDetector {
      */
     public static long countStaleReads() {
         return staleReads.longValue();
+    }
+
+    public static void reset() {
+        staleReads.set(0);
+        writeAcknowledgments.clear();
+        writeVersions.clear();
     }
 }

@@ -9,7 +9,7 @@ public interface ReadWriteCounter {
 
     void registerRead(String key);
 
-    double getReadFrequency(String key);
+    Double getReadFrequency(String key);
 
-    double getWriteFrequency(String key);
+    Double getWriteFrequency(String key);
 }

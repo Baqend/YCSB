@@ -7,14 +7,13 @@ import java.util.concurrent.ConcurrentLinkedDeque;
 /**
  * Created by Michael on 19.08.2014.
  */
-public abstract class SlidingWindow implements ReadWriteCounter {
+public class SlidingWindow implements ReadWriteCounter {
 
     private final double timeWindow;
 
-    private volatile ConcurrentHashMap<String, Double> readFrequency = new ConcurrentHashMap<>();
+    //TODO: notice when sliding window has passed once for each member
     private volatile ConcurrentHashMap<String, ConcurrentLinkedDeque<Long>> readArrivals = new ConcurrentHashMap<>();
     private volatile ConcurrentHashMap<String, ConcurrentLinkedDeque<Long>> writeArrivals = new ConcurrentHashMap<>();
-    private volatile ConcurrentHashMap<String, Double> writeFrequency = new ConcurrentHashMap<>();
 
     /**
      * @param timeWindow Estimation window in s.
@@ -34,7 +33,6 @@ public abstract class SlidingWindow implements ReadWriteCounter {
             v.offer(System.nanoTime());
             return v;
         });
-        updateWriteFrequency(key);
     }
 
     @Override
@@ -46,70 +44,67 @@ public abstract class SlidingWindow implements ReadWriteCounter {
             v.offer(System.nanoTime());
             return v;
         });
-
-        updateReadFrequency(key);
     }
 
-    private void updateReadFrequency(String key) {
+    @Override
+    public Double getReadFrequency(String key) {
         ConcurrentLinkedDeque<Long> reads = readArrivals.get(key);
-        long now = System.nanoTime();
-        long cutOff = now - (long) timeWindow;
 
-        Iterator<Long> it = reads.iterator();
+        if (reads != null) {
+            long now = System.nanoTime();
+            long cutOff = now - (long) timeWindow;
 
-        // Only consider reads in time window
-        while (it.hasNext()) {
-            if (it.next() < cutOff) {
-                it.remove();
+            Iterator<Long> it = reads.iterator();
+
+            // Only consider reads in time window
+            while (it.hasNext()) {
+                if (it.next() < cutOff) {
+                    it.remove();
+                }
+            }
+
+            int k = reads.size();
+            if (k > 0) {
+                if (now - reads.getFirst() < timeWindow) {
+                    long adjustedWindow = now - reads.getFirst();
+                    return k / (double) adjustedWindow;
+
+                } else {
+                    return k / timeWindow;
+                }
             }
         }
-
-        int k = reads.size();
-        if (k > 0) {
-            if (k == 1) {
-                readFrequency.put(key, 1 / (double) (now - reads.getLast()));
-            } else {
-                Double f = k / timeWindow;
-                readFrequency.put(key, f);
-            }
-        }
+        return 0.0;
     }
 
-    private void updateWriteFrequency(String key) {
+    @Override
+    public Double getWriteFrequency(String key) {
+
         ConcurrentLinkedDeque<Long> writes = writeArrivals.get(key);
+        if (writes != null) {
+            long now = System.nanoTime();
+            long cutOff = now - (long) timeWindow;
 
-        long now = System.nanoTime();
-        long cutOff = now - (long) timeWindow;
+            Iterator<Long> it = writes.iterator();
 
-        Iterator<Long> it = writes.iterator();
+            // Only consider writes in time window
+            while (it.hasNext()) {
+                if (it.next() < cutOff) {
+                    it.remove();
+                }
+            }
 
-        // Only consider writes in time window
-        while (it.hasNext()) {
-            if (it.next() < cutOff) {
-                it.remove();
+            int k = writes.size();
+            if (k > 0) {
+                if (now - writes.getFirst() < timeWindow) {
+                    long adjustedWindow = now - writes.getFirst();
+                    return k / (double) adjustedWindow;
+                } else {
+                    return k / timeWindow;
+                }
             }
         }
-
-        int k = writes.size();
-        if (k > 0) {
-            if (k == 1) {
-                writeFrequency.put(key, 1 / (double) (now - writes.getLast()));
-            } else {
-                Double f = k / timeWindow;
-                writeFrequency.put(key, f);
-            }
-        }
-
-    }
-
-    @Override
-    public double getReadFrequency(String key) {
-        return readFrequency.get(key);
-    }
-
-    @Override
-    public double getWriteFrequency(String key) {
-        return writeFrequency.get(key);
+        return 0.0;
     }
 
 }
