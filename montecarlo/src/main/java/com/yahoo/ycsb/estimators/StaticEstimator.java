@@ -28,6 +28,6 @@ public class StaticEstimator implements TTLEstimator {
     @Override
     public long estimate(String key) {
         // static 10 seconds
-        return ttl / scale;
+        return ttl;
     }
 }

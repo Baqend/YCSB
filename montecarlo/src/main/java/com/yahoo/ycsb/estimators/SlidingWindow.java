@@ -14,6 +14,7 @@ public class SlidingWindow implements ReadWriteCounter {
     //TODO: notice when sliding window has passed once for each member
     private volatile ConcurrentHashMap<String, ConcurrentLinkedDeque<Long>> readArrivals = new ConcurrentHashMap<>();
     private volatile ConcurrentHashMap<String, ConcurrentLinkedDeque<Long>> writeArrivals = new ConcurrentHashMap<>();
+    private volatile long start;
 
     /**
      * @param timeWindow Estimation window in s.
@@ -22,6 +23,7 @@ public class SlidingWindow implements ReadWriteCounter {
 
         // internal calculation requires nanoseconds
         this.timeWindow = timeWindow * 1_000_000_000l;
+        start = System.nanoTime();
     }
 
     @Override
@@ -66,7 +68,7 @@ public class SlidingWindow implements ReadWriteCounter {
             int k = reads.size();
             if (k > 0) {
                 if (now - reads.getFirst() < timeWindow) {
-                    long adjustedWindow = now - reads.getFirst();
+                    long adjustedWindow = now - start;
                     return k / (double) adjustedWindow;
 
                 } else {
@@ -74,7 +76,7 @@ public class SlidingWindow implements ReadWriteCounter {
                 }
             }
         }
-        return 0.0;
+        return null;
     }
 
     @Override
@@ -97,14 +99,14 @@ public class SlidingWindow implements ReadWriteCounter {
             int k = writes.size();
             if (k > 0) {
                 if (now - writes.getFirst() < timeWindow) {
-                    long adjustedWindow = now - writes.getFirst();
+                    long adjustedWindow = now - start;
                     return k / (double) adjustedWindow;
                 } else {
                     return k / timeWindow;
                 }
             }
         }
-        return 0.0;
+        return null;
     }
 
 }

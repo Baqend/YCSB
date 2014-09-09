@@ -15,6 +15,7 @@
       <module fileurl="file://$PROJECT_DIR$/mapkeeper/mapkeeper-binding.iml" filepath="$PROJECT_DIR$/mapkeeper/mapkeeper-binding.iml" />
       <module fileurl="file://$PROJECT_DIR$/mongodb/mongodb-binding.iml" filepath="$PROJECT_DIR$/mongodb/mongodb-binding.iml" />
       <module fileurl="file://$PROJECT_DIR$/montecarlo/montecarlo-binding.iml" filepath="$PROJECT_DIR$/montecarlo/montecarlo-binding.iml" />
+      <module fileurl="file://$PROJECT_DIR$/montecarlo/montecarlo-binding.iml" filepath="$PROJECT_DIR$/montecarlo/montecarlo-binding.iml" />
       <module fileurl="file://$PROJECT_DIR$/orientdb/orientdb-binding.iml" filepath="$PROJECT_DIR$/orientdb/orientdb-binding.iml" />
       <module fileurl="file://$PROJECT_DIR$/redis/redis-binding.iml" filepath="$PROJECT_DIR$/redis/redis-binding.iml" />
       <module fileurl="file://$PROJECT_DIR$/root.iml" filepath="$PROJECT_DIR$/root.iml" />

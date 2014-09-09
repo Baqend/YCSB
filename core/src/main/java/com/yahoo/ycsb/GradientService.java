@@ -4,42 +4,54 @@ import java.io.BufferedWriter;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.HashMap;
+import java.util.LinkedList;
 
 /**
  * Created by Michael on 01.09.2014.
  */
 public class GradientService {
 
-    private static int maxTtl = 50;
-    private static int intraTtl = 50;
-    private static double intraSlope = 0.1;
-    private static double ttlStep;
+    private static double maxTtl = 25;
+    private static double intraTtl;
+    private static double intraSlope;
     private static double slope = 0.1;
     private static double slopeStep;
     private static boolean done = false;
     private static int superSteps = 0;
     private static BufferedWriter writer;
     private static HashMap<Integer, Double> currentSuperStepScore = new HashMap<>();
-    private static int currentIt = 0;
-    private static double currentBest = Long.MAX_VALUE;
+    private static int currentIt;
+    private static double currentBest;
+    private static LinkedList<DescentResult> descentResults = new LinkedList<>();
 
-    public static void initSteps(double scale) throws IOException {
-        ttlStep = maxTtl * scale;
+
+    public static void init(double scale, double ttlSteps, double ttl, double initSlope, BufferedWriter resultWriter) throws IOException {
+        maxTtl = ttl;
+        slope = initSlope;
         slopeStep = slope * scale;
-        writer = new BufferedWriter(new FileWriter("result.txt", true));
+        writer = resultWriter;
+        currentIt = 0;
+        currentBest = Long.MAX_VALUE;
+        superSteps = 0;
 
     }
 
-    public static void registerScore(SimulationResult score)  {
-        double sc = (score.getCacheMisses() +  score.getInvalidations()
-                +  score.getStaleReads())/ 100000.0;
+    public static void registerScore(SimulationResult score) {
+        double sc = (0.2 * score.getCacheMisses() +  0.8 * score.getInvalidations()) / 100000.0;
+
         try {
-            writer.write("");
+            writer.write("score = " + sc + " hits= " + score.getHits() + ", misses= " + score.getCacheMisses()
+                    + ", invalidations= " + score.getInvalidations() + ", stale reads= " + score.getStaleReads()
+                    + ", fpp= " + score.getP() + "\n");
+            System.out.print("score = " + sc + " hits= " + score.getHits() + ", misses= " + score.getCacheMisses()
+                    + ", invalidations= " + score.getInvalidations() + ", stale reads= " + score.getStaleReads()
+                    + ", fpp= " + score.getP() + "\n");
+
 
         } catch (IOException e) {
             e.printStackTrace();
         }
-        System.out.println("score = " + sc);
+        //System.out.println("Tried score = " + sc + ", slope = " + intraSlope);
         currentSuperStepScore.put(currentIt, sc);
     }
 
@@ -47,7 +59,7 @@ public class GradientService {
         return intraSlope;
     }
 
-    public static int getMaxTtl() {
+    public static double getMaxTtl() {
         return intraTtl;
     }
 
@@ -63,23 +75,21 @@ public class GradientService {
 
         switch (i) {
             case 0:
-                intraTtl += ttlStep;
-                break;
-            case 1:
-                intraTtl -= ttlStep;
-                break;
-            case 2:
                 intraSlope += slopeStep;
                 break;
-            case 3:
-                intraSlope -= slopeStep;
+            case 1:
+                if (intraSlope - slopeStep > 0) {
+                    intraSlope -= slopeStep;
+                }
+                else {
+                    intraSlope = 0.0;
+                }
                 break;
         }
     }
 
-    private static void anneal() {
-            ttlStep -= ttlStep * 1.10;
-            slopeStep -= slopeStep * 1.10;
+    public static LinkedList<DescentResult> getDescentResults() {
+        return descentResults;
     }
 
     public static void iterateSuperstep() {
@@ -87,55 +97,50 @@ public class GradientService {
 
         int k = -1;
         double current = Double.MAX_VALUE;
-        for (int i = 0; i < 4; i++) {
-            k = currentSuperStepScore.get(i) < current ? i : k;
-            current = currentSuperStepScore.get(i);
+        for (int i = 0; i < 2; i++) {
+            if (currentSuperStepScore.get(i) < current) {
+                current = currentSuperStepScore.get(i);
+                k = i;
+            }
         }
 
         if (current < currentBest) {
             switch (k) {
                 case 0:
-                    maxTtl += ttlStep;
-                    System.out.println("increasing maxttl");
-                    break;
-                case 1:
-                    maxTtl -= ttlStep;
-                    System.out.println("decreasing maxttl");
-                    break;
-                case 2:
                     slope += slopeStep;
                     System.out.println("increasing slope");
                     break;
-                case 3:
+                case 1:
                     if (slope - slopeStep > 0) {
                         slope -= slopeStep;
                         System.out.println("decreasing slope");
                     }
                     break;
             }
-            if (current - currentBest < current * 1.025) {
-                anneal();
-            }
+
             currentBest = current;
 
-        }
-        else {
-            done = true;
             try {
-            writer.flush();
-            writer.close();
-            }
-            catch (Exception e) {
+                System.out.print("adjusted score= " + currentBest + ", slope = " + slope + "\n");
+                writer.write("adjusted score= " + currentBest + ", slope = " + slope + "\n");
+            } catch (IOException e) {
                 e.printStackTrace();
             }
-
+        } else {
+            done = true;
+            descentResults.add(new DescentResult(currentBest, maxTtl, slope));
         }
 
         currentSuperStepScore.clear();
-
+        currentIt = 0;
         if (superSteps == 50) {
             done = true;
         }
+    }
+
+    public static void reset() {
+        done = false;
+        currentSuperStepScore.clear();
     }
 
     public static void printCurrent() {

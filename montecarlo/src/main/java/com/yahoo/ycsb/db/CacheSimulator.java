@@ -2,8 +2,19 @@ package com.yahoo.ycsb.db;
 
 import com.yahoo.ycsb.SimulationResult;
 
+import java.util.AbstractMap;
+import java.util.Collections;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReadWriteLock;
+import java.util.concurrent.locks.ReentrantLock;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
+
+import static java.util.AbstractMap.SimpleEntry;
 
 /**
  * Created by Michael Schaarschmidt.
@@ -13,6 +24,10 @@ public class CacheSimulator implements CacheLayer {
     private volatile SimulationLayer db;
     private volatile ConcurrentHashMap<String, DBObject> cache = new ConcurrentHashMap<>();
     private volatile ConcurrentHashMap<String, Long> purgedVersions = new ConcurrentHashMap<>();
+    private volatile Set<String> requestedVersions = Collections.newSetFromMap(new ConcurrentHashMap<>());
+
+    private volatile Map<String,Map.Entry<DBObject, ReadWriteLock>> locks = new ConcurrentHashMap<>();
+    private Lock check = new ReentrantLock();
 
     private AtomicInteger hits = new AtomicInteger();
     private AtomicInteger misses = new AtomicInteger();
@@ -32,11 +47,27 @@ public class CacheSimulator implements CacheLayer {
                 return v;
             }
         });
+        if(obj != null) {
+            try {
+                Thread.sleep(DistributionService.getClientToCacheSample());
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+            hits.incrementAndGet();
+            return obj;
+        }
 
-        if (obj == null) {
+
+        locks.computeIfAbsent(key, k -> new SimpleEntry<>(new DBObject(key), new ReentrantReadWriteLock()));
+        locks.get(key).getValue().writeLock().lock();
+        boolean add = requestedVersions.add(key);
+        if (add) {
             misses.incrementAndGet();
+
             return readFromDB(key);
         } else {
+            locks.get(key).getValue().writeLock().unlock();
+            obj = locks.get(key).getKey();
             try {
                 Thread.sleep(DistributionService.getClientToCacheSample());
             } catch (InterruptedException e) {
@@ -62,8 +93,11 @@ public class CacheSimulator implements CacheLayer {
                 }
                 return obj;
             });
+            locks.get(key).getKey().setTimeStamp(obj.getTimeStamp());
+            locks.get(key).getKey().setExpiration(obj.getExpiration());
+            locks.get(key).getValue().writeLock().unlock();
+            requestedVersions.remove(key);
             Thread.sleep(DistributionService.getClientToCacheSample());
-
             return obj;
         } catch (InterruptedException e) {
             e.printStackTrace();
@@ -106,6 +140,7 @@ public class CacheSimulator implements CacheLayer {
         System.out.println("cache misses = " + misses.toString());
         System.out.println("invalidations = " + purges.toString());
         System.out.println("stale reads = " + StalenessDetector.countStaleReads());
+        System.out.println("false positive p = " + ((DBSimulator) db).getFilter().getEstimatedFalsePositiveProbability());
 
         Double hitRatio = hits.doubleValue() / (hits.doubleValue() + misses.doubleValue());
         System.out.println("cache hit ratio = " + hitRatio);
@@ -113,6 +148,7 @@ public class CacheSimulator implements CacheLayer {
     }
 
     public SimulationResult calculateScore() {
-        return new SimulationResult(misses.longValue(), purges.longValue(), StalenessDetector.countStaleReads());
+        return new SimulationResult(misses.longValue(), purges.longValue(), hits.longValue(),
+                ((DBSimulator) db).getFilter().getEstimatedFalsePositiveProbability(),  StalenessDetector.countStaleReads());
     }
 }

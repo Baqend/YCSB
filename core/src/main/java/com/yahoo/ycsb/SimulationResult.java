@@ -6,6 +6,25 @@ package com.yahoo.ycsb;
 public class SimulationResult {
     private long cacheMisses;
     private long invalidations;
+    private long hits;
+    private double p;
+
+    public double getP() {
+        return p;
+    }
+
+    public void setP(double p) {
+        this.p = p;
+    }
+
+    public SimulationResult(long cacheMisses, long invalidations, long hits, double p, long staleReads) {
+
+        this.cacheMisses = cacheMisses;
+        this.invalidations = invalidations;
+        this.hits = hits;
+        this.p = p;
+        this.staleReads = staleReads;
+    }
 
     public long getCacheMisses() {
         return cacheMisses;
@@ -31,13 +50,13 @@ public class SimulationResult {
         this.staleReads = staleReads;
     }
 
-    public SimulationResult(long cacheMisses, long invalidations, long staleReads) {
-        this.cacheMisses = cacheMisses;
-        this.invalidations = invalidations;
-
-        this.staleReads = staleReads;
-    }
-
     private long staleReads;
 
+    public long getHits() {
+        return hits;
+    }
+
+    public void setHits(long hits) {
+        this.hits = hits;
+    }
 }

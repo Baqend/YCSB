@@ -1,6 +1,9 @@
 package com.yahoo.ycsb.db;
 
 import com.yahoo.ycsb.estimators.TTLEstimator;
+import orestes.bloomfilter.BloomFilter;
+import orestes.bloomfilter.FilterBuilder;
+import orestes.bloomfilter.cachesketch.ExpiringBloomFilter;
 
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executors;
@@ -25,10 +28,19 @@ public class DBSimulator implements SimulationLayer {
     private volatile TTLEstimator estimator;
     private volatile CacheLayer cache;
 
+    public ExpiringBloomFilter<String> getFilter() {
+        return filter;
+    }
+
+    private volatile ExpiringBloomFilter<String> filter;
+
     private volatile ScheduledExecutorService executorService = Executors.newScheduledThreadPool(1);
 
     public DBSimulator(TTLEstimator estimator) {
         this.estimator = estimator;
+        int expectedElements = 100;
+        FilterBuilder builder = new FilterBuilder(expectedElements, 0.05);
+        filter = new ExpiringBloomFilter<>(builder);
     }
 
     @Override
@@ -40,8 +52,9 @@ public class DBSimulator implements SimulationLayer {
         }
 
         // Everytime an object is read, we need a new TTL estimation.
-        long ttl = (long) Math.round(DistributionService.scale(estimator.registerRead(key)));
-//        System.out.println("serving ttl = " + ttl);
+        long ttl = Math.round(DistributionService.scale(estimator.registerRead(key)));
+        filter.reportRead(key, ttl);
+      // System.out.println("serving ttl = " + ttl);
         obj.setExpiration(System.nanoTime() + ttl);
 
         try {
@@ -63,12 +76,14 @@ public class DBSimulator implements SimulationLayer {
                     return obj.getTimeStamp() > v.getTimeStamp() ? obj : v;
                 }
             });
+            filter.reportWrite(obj.getKey());
             estimator.registerWrite(obj.getKey());
             // Schedule an invalidation for the version we just wrote to the database.
-            executorService.schedule(
-                    () -> cache.purge(obj), DistributionService.getPurgeSample(),
-                    TimeUnit.MILLISECONDS);
-
+            if (filter.isCached(obj.getKey())) {
+                executorService.schedule(
+                        () -> cache.purge(obj), DistributionService.getPurgeSample(),
+                        TimeUnit.MILLISECONDS);
+            }
             Thread.sleep(DistributionService.getClientToDBSample());
 
 

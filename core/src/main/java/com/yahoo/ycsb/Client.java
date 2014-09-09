@@ -22,16 +22,10 @@ import com.yahoo.ycsb.measurements.Measurements;
 import com.yahoo.ycsb.measurements.exporter.MeasurementsExporter;
 import com.yahoo.ycsb.measurements.exporter.TextMeasurementsExporter;
 
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.OutputStream;
+import java.io.*;
 import java.text.DecimalFormat;
 import java.text.SimpleDateFormat;
-import java.util.Date;
-import java.util.Enumeration;
-import java.util.Properties;
-import java.util.Vector;
+import java.util.*;
 
 //import org.apache.log4j.BasicConfigurator;
 
@@ -443,26 +437,56 @@ public class Client
 
         if (useDescent) {
             try {
-                GradientService.initSteps(1.0/3.0);
+                BufferedWriter writer = new BufferedWriter(new FileWriter("descent_result.txt", true));
+
+                for (int k = 0; k < 25; k++) {
+                   double slope = Math.random(); // - 0.99999; // 0.01 + (Math.random() * ((100 - 0.01) + 0.01));
+                   GradientService.init(1.0 / 5.0, 25, 500, slope , writer);
+
+                    writer.write("starting new optimization with slope = " + slope + "\n");
+                    System.out.print("starting new optimization with slope = " + slope + "\n");
+
+                    while (!GradientService.finished()) {
+                        for (int i = 0; i < 2; i++) {
+                            GradientService.iterate(i);
+                            runYCSB(args);
+                        }
+                        GradientService.iterateSuperstep();
+
+                        GradientService.printCurrent();
+                    }
+
+                    writer.write("Simulations finished, optimal maxttl = " + GradientService.getMaxTtl()
+                            + ", slope= " + GradientService.getSlope() + "\n");
+                    System.out.print("Simulations finished, optimal maxttl = " + GradientService.getMaxTtl()
+                            + ", slope= " + GradientService.getSlope() + "\n");
+                    writer.write("#################################################################### \n");
+                    System.out.print("#################################################################### \n");
+                    GradientService.reset();
+                }
+                LinkedList<DescentResult> results = GradientService.getDescentResults();
+                DescentResult ds = new DescentResult(100000.0, 0 ,0);
+                for (DescentResult result : results) {
+                    if (result.getScore() < ds.getScore()) {
+                        ds = result;
+                    }
+                }
+                writer.write("final result:" + ds.getScore() + ", ttl= " + ds.getTtl()+ "slope =" + ds.getSlope());
+                writer.flush();
+                writer.close();
+
             } catch (IOException e) {
                 e.printStackTrace();
             }
-            while (!GradientService.finished()) {
-                for (int i = 0; i < 4; i++) {
-                    GradientService.iterate(i);
-                    runYCSB(args);
-                }
-                System.out.println("adjusting through superstep..");
-                GradientService.iterateSuperstep();
-
-                GradientService.printCurrent();
-            }
-
-            System.out.println("Simulations finished, optimal maxttl = " + GradientService.getMaxTtl()
-                    + ", slope= " + GradientService.getSlope());
 
         }
         else {
+            try {
+                BufferedWriter writer = new BufferedWriter(new FileWriter("normal.txt", true));
+                GradientService.init(1.0 / 3.0, 1, 0, 0 , writer);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
             runYCSB(args);
         }
         System.exit(0);

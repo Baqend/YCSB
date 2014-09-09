@@ -10,7 +10,12 @@
     <artifactId>montecarlo-binding</artifactId>
     <name>Montecarlo Binding</name>
     <packaging>jar</packaging>
-
+    <repositories>
+        <repository>
+            <id>orestes-bloom-filter</id>
+            <url>https://raw.githubusercontent.com/Baqend/Orestes-Bloomfilter/master/maven-repo</url>
+        </repository>
+    </repositories>
 <dependencies>
     <dependency>
         <groupId>com.yahoo.ycsb</groupId>
@@ -28,6 +33,12 @@
         <version>4.8.1</version>
         <scope>test</scope>
     </dependency>
+        <dependency>
+            <groupId>com.baqend</groupId>
+            <artifactId>bloom-filter</artifactId>
+            <version>1.02</version>
+        </dependency>
+
 </dependencies>
 
 <build>

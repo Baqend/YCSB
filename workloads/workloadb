@@ -24,7 +24,7 @@
 recordcount=1000
 operationcount=100000
 workload=com.yahoo.ycsb.workloads.CoreWorkload
-scaling=10
+scaling=50
 exportfile=asdf.txt
 readallfields=true
 threadcount=10

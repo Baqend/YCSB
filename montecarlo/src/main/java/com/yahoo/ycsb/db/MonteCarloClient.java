@@ -6,6 +6,7 @@ import com.yahoo.ycsb.DBException;
 import com.yahoo.ycsb.GradientService;
 import com.yahoo.ycsb.estimators.QuantileEstimator;
 import com.yahoo.ycsb.estimators.SlidingWindow;
+import com.yahoo.ycsb.estimators.StaticEstimator;
 import org.apache.commons.math3.distribution.NormalDistribution;
 
 import java.util.HashMap;
@@ -43,9 +44,9 @@ public class MonteCarloClient extends DB {
                 Properties props = getProperties();
                 int scaling = Integer.parseInt(props.getProperty("scaling", "10"));
 
-                DistributionService d = new DistributionService(new NormalDistribution(3.99, 0.11),
-                        new NormalDistribution(173.04, 0.11), new NormalDistribution(173.04, 0.11),
-                        new NormalDistribution(10, 2), new NormalDistribution(163.89, 0.18), scaling);
+                DistributionService d = new DistributionService(new NormalDistribution(3.99/2.0, 0.11/2.0),
+                        new NormalDistribution(173.04/2.0, 0.11/2.0), new NormalDistribution(100,10),
+                        new NormalDistribution(10, 2), new NormalDistribution(163.89/2.0, 0.18/2.0), scaling);
 
                 cache = new CacheSimulator(new DBSimulator(
                         new QuantileEstimator(
@@ -54,9 +55,9 @@ public class MonteCarloClient extends DB {
                                 GradientService.getSlope(),
                                 QuantileEstimator.RatingFunction.linear
                                 )));
-
-//                cache = new CacheSimulator(new DBSimulator(
-//                        new StaticEstimator(50)));
+/*
+                  cache = new CacheSimulator(new DBSimulator(
+                        new StaticEstimator(500)));*/
             }
         }
     }
