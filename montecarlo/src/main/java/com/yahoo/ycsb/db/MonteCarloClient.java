@@ -47,17 +47,17 @@ public class MonteCarloClient extends DB {
                 DistributionService d = new DistributionService(new NormalDistribution(3.99/2.0, 0.11/2.0),
                         new NormalDistribution(173.04/2.0, 0.11/2.0), new NormalDistribution(100,10),
                         new NormalDistribution(10, 2), new NormalDistribution(163.89/2.0, 0.18/2.0), scaling);
-
+/*
                 cache = new CacheSimulator(new DBSimulator(
                         new QuantileEstimator(
                                 new SlidingWindow(300),
                                 GradientService.getMaxTtl(),
-                                GradientService.getSlope(),
+                                0.022743096825052267,
                                 QuantileEstimator.RatingFunction.linear
                                 )));
-/*
+*/
                   cache = new CacheSimulator(new DBSimulator(
-                        new StaticEstimator(500)));*/
+                        new StaticEstimator(1000000)));
             }
         }
     }

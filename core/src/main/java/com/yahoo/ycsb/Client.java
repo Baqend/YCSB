@@ -433,18 +433,18 @@ public class Client
 	@SuppressWarnings("unchecked")
 	public static void main(String[] args)
 	{
-        boolean useDescent = true; //need to adjust other parts for that, too
+        boolean useDescent = false; //need to adjust other parts for that, too
 
         if (useDescent) {
             try {
-                BufferedWriter writer = new BufferedWriter(new FileWriter("descent_result.txt", true));
+                BufferedWriter writer = new BufferedWriter(new FileWriter("descent_result_fpp.txt", true));
 
-                for (int k = 0; k < 25; k++) {
+                for (int k = 0; k < 10; k++) {
                    double slope = Math.random(); // - 0.99999; // 0.01 + (Math.random() * ((100 - 0.01) + 0.01));
                    GradientService.init(1.0 / 5.0, 25, 500, slope , writer);
 
-                    writer.write("starting new optimization with slope = " + slope + "\n");
-                    System.out.print("starting new optimization with slope = " + slope + "\n");
+                    writer.write("starting new optimization #" + k + " with slope = " + slope + "\n");
+                    System.out.print("starting new optimization = " + k + " with slope = " + slope + "\n");
 
                     while (!GradientService.finished()) {
                         for (int i = 0; i < 2; i++) {
@@ -483,7 +483,7 @@ public class Client
         else {
             try {
                 BufferedWriter writer = new BufferedWriter(new FileWriter("normal.txt", true));
-                GradientService.init(1.0 / 3.0, 1, 0, 0 , writer);
+                GradientService.init(1.0 / 3.0, 1, 500, 0 , writer);
             } catch (IOException e) {
                 e.printStackTrace();
             }

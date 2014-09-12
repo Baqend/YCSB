@@ -9,10 +9,7 @@ import java.util.Set;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReadWriteLock;
-import java.util.concurrent.locks.ReentrantLock;
-import java.util.concurrent.locks.ReentrantReadWriteLock;
+import java.util.concurrent.locks.*;
 
 import static java.util.AbstractMap.SimpleEntry;
 
@@ -24,10 +21,8 @@ public class CacheSimulator implements CacheLayer {
     private volatile SimulationLayer db;
     private volatile ConcurrentHashMap<String, DBObject> cache = new ConcurrentHashMap<>();
     private volatile ConcurrentHashMap<String, Long> purgedVersions = new ConcurrentHashMap<>();
-    private volatile Set<String> requestedVersions = Collections.newSetFromMap(new ConcurrentHashMap<>());
 
-    private volatile Map<String,Map.Entry<DBObject, ReadWriteLock>> locks = new ConcurrentHashMap<>();
-    private Lock check = new ReentrantLock();
+    private volatile Map<String, StampedLock> locks = new ConcurrentHashMap<>();
 
     private AtomicInteger hits = new AtomicInteger();
     private AtomicInteger misses = new AtomicInteger();
@@ -39,7 +34,38 @@ public class CacheSimulator implements CacheLayer {
     }
 
     public DBObject read(String key) {
-        DBObject obj = cache.compute(key, (k, v) -> {
+        try {
+            StampedLock lock = locks.computeIfAbsent(key, k -> new StampedLock());
+            DBObject obj = cacheLookup(key);
+
+            if (obj == null) {
+                long w = lock.writeLock();
+                obj = cacheLookup(key);
+
+                if (obj == null) {
+                    misses.incrementAndGet();
+                    obj = readFromDB(key);
+                } else {
+                    hits.incrementAndGet();
+                }
+
+                lock.unlock(w);
+            } else {
+                hits.incrementAndGet();
+            }
+
+            Thread.sleep(DistributionService.getClientToCacheSample());
+            return obj;
+
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+            return null;
+        }
+    }
+
+    private DBObject cacheLookup(String key) {
+        DBObject obj;
+        obj = cache.compute(key, (k, v) -> {
             if (v == null || v.getExpiration() < System.nanoTime()
                     || (purgedVersions.get(key) != null && v.getTimeStamp() < purgedVersions.get(key))) {
                 return null;
@@ -47,35 +73,7 @@ public class CacheSimulator implements CacheLayer {
                 return v;
             }
         });
-        if(obj != null) {
-            try {
-                Thread.sleep(DistributionService.getClientToCacheSample());
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
-            hits.incrementAndGet();
-            return obj;
-        }
-
-
-        locks.computeIfAbsent(key, k -> new SimpleEntry<>(new DBObject(key), new ReentrantReadWriteLock()));
-        locks.get(key).getValue().writeLock().lock();
-        boolean add = requestedVersions.add(key);
-        if (add) {
-            misses.incrementAndGet();
-
-            return readFromDB(key);
-        } else {
-            locks.get(key).getValue().writeLock().unlock();
-            obj = locks.get(key).getKey();
-            try {
-                Thread.sleep(DistributionService.getClientToCacheSample());
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
-            hits.incrementAndGet();
-            return obj;
-        }
+        return obj;
     }
 
 
@@ -93,16 +91,11 @@ public class CacheSimulator implements CacheLayer {
                 }
                 return obj;
             });
-            locks.get(key).getKey().setTimeStamp(obj.getTimeStamp());
-            locks.get(key).getKey().setExpiration(obj.getExpiration());
-            locks.get(key).getValue().writeLock().unlock();
-            requestedVersions.remove(key);
-            Thread.sleep(DistributionService.getClientToCacheSample());
             return obj;
         } catch (InterruptedException e) {
             e.printStackTrace();
+            return null;
         }
-        return null;
     }
 
     public void write(DBObject obj) {
@@ -110,13 +103,12 @@ public class CacheSimulator implements CacheLayer {
     }
 
     public void purge(DBObject obj) {
-        cache.compute(obj.getKey(), (k,v) -> {
-                if (v != null &&  v.getExpiration() > System.nanoTime()) {
-                    purges.incrementAndGet();
-                }
-            return null;
-        });
+        cache.remove(obj.getKey());
         purgedVersions.put(obj.getKey(), obj.getTimeStamp());
+    }
+
+    public void addInvalidation() {
+        purges.incrementAndGet();
     }
 
     public void printStatistics(String fileName) {
@@ -149,6 +141,6 @@ public class CacheSimulator implements CacheLayer {
 
     public SimulationResult calculateScore() {
         return new SimulationResult(misses.longValue(), purges.longValue(), hits.longValue(),
-                ((DBSimulator) db).getFilter().getEstimatedFalsePositiveProbability(),  StalenessDetector.countStaleReads());
+                ((DBSimulator) db).getFilter().getEstimatedFalsePositiveProbability(), StalenessDetector.countStaleReads());
     }
 }

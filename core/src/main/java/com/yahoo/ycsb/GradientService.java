@@ -12,7 +12,6 @@ import java.util.LinkedList;
 public class GradientService {
 
     private static double maxTtl = 25;
-    private static double intraTtl;
     private static double intraSlope;
     private static double slope = 0.1;
     private static double slopeStep;
@@ -37,7 +36,7 @@ public class GradientService {
     }
 
     public static void registerScore(SimulationResult score) {
-        double sc = (0.2 * score.getCacheMisses() +  0.8 * score.getInvalidations()) / 100000.0;
+        double sc = (0.1 * score.getCacheMisses() +  0.9 * score.getInvalidations()) / 100000.0 + 10 * score.getP();
 
         try {
             writer.write("score = " + sc + " hits= " + score.getHits() + ", misses= " + score.getCacheMisses()
@@ -60,7 +59,7 @@ public class GradientService {
     }
 
     public static double getMaxTtl() {
-        return intraTtl;
+        return maxTtl;
     }
 
     public static boolean finished() {
@@ -69,7 +68,6 @@ public class GradientService {
 
     public static void iterate(int i) {
         intraSlope = slope;
-        intraTtl = maxTtl;
 
         currentIt = i;
 

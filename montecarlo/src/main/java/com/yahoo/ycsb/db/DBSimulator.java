@@ -38,7 +38,7 @@ public class DBSimulator implements SimulationLayer {
 
     public DBSimulator(TTLEstimator estimator) {
         this.estimator = estimator;
-        int expectedElements = 100;
+        int expectedElements = 1000;
         FilterBuilder builder = new FilterBuilder(expectedElements, 0.05);
         filter = new ExpiringBloomFilter<>(builder);
     }
@@ -53,10 +53,13 @@ public class DBSimulator implements SimulationLayer {
 
         // Everytime an object is read, we need a new TTL estimation.
         long ttl = Math.round(DistributionService.scale(estimator.registerRead(key)));
-        filter.reportRead(key, ttl);
-      // System.out.println("serving ttl = " + ttl);
-        obj.setExpiration(System.nanoTime() + ttl);
 
+       // System.out.println("serving ttl = " + ttl);
+        //double fpr = filter.getEstimatedFalsePositiveProbability();
+        //ttl *= (1 - fpr);
+
+        filter.reportRead(key, ttl);
+        obj.setExpiration(System.nanoTime() + ttl);
         try {
             Thread.sleep(DistributionService.getCacheToDBSample());
         } catch (InterruptedException e) {
@@ -80,10 +83,12 @@ public class DBSimulator implements SimulationLayer {
             estimator.registerWrite(obj.getKey());
             // Schedule an invalidation for the version we just wrote to the database.
             if (filter.isCached(obj.getKey())) {
+                ((CacheSimulator)cache).addInvalidation();
                 executorService.schedule(
                         () -> cache.purge(obj), DistributionService.getPurgeSample(),
                         TimeUnit.MILLISECONDS);
             }
+
             Thread.sleep(DistributionService.getClientToDBSample());
 
 
